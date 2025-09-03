@@ -1,0 +1,124 @@
+.editor__toolbar {
+  @apply flex gap-x-2 border-b border-zinc-400/10 px-3 py-2;
+
+  .tools {
+    @apply flex items-center gap-x-2;
+
+    .tool__group {
+      @apply relative mx-1 flex items-center;
+
+      &:not(:last-of-type)::after {
+        @apply absolute -right-2 h-4 w-px bg-zinc-400 content-[''];
+      }
+
+      button {
+        @apply cursor-pointer rounded-md border-0 bg-transparent px-1 py-0.5 text-zinc-400 outline-0 hover:bg-zinc-400/10;
+      }
+
+      .tool__dropdown__wrapper {
+        @apply relative;
+
+        .dropdown__content {
+          @apply  absolute z-10 mt-2 min-w-60 rounded-md border border-zinc-400/10 bg-zinc-400;
+
+          .option {
+            @apply flex items-center justify-between px-3 py-1.5 hover:bg-zinc-400;
+
+            span {
+              @apply text-sm;
+
+              &.h1 {
+                @apply text-2xl font-bold;
+              }
+
+              &.h2 {
+                @apply text-xl font-bold;
+              }
+
+              &.h3 {
+                @apply text-lg font-bold;
+              }
+
+              &.h4 {
+                @apply text-base font-bold;
+              }
+
+              &.h5 {
+                @apply text-base font-semibold;
+              }
+
+              &.h6 {
+                @apply text-sm font-semibold;
+              }
+
+              &.p {
+                @apply text-sm;
+              }
+            }
+
+            .shortcut {
+              @apply text-xs text-zinc-400;
+            }
+          }
+
+          &.color__dropdown {
+            @apply grid min-w-max grid-cols-6 gap-2 p-2;
+
+            .option {
+              @apply flex h-7 w-7 cursor-pointer items-center justify-between rounded-md p-0 hover:bg-zinc-400;
+            }
+          }
+
+          &.link__editor {
+            @apply min-w-[18rem];
+          }
+
+          &.blocks__dropdown {
+            @apply min-w-[20rem];
+
+            .search__wrapper {
+              @apply p-3 border-b border-zinc-400/10;
+            }
+
+            .option {
+              @apply flex cursor-pointer justify-start gap-x-4 py-2;
+
+              img {
+                @apply h-12 w-12 rounded-md;
+              }
+
+              .details {
+                @apply flex flex-col;
+
+                span {
+                  @apply text-sm last-of-type:text-xs;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      .tool__dropdown {
+        @apply relative px-2;
+
+        .trigger {
+          @apply flex items-center gap-x-1;
+
+          i {
+            @apply text-xs text-zinc-400;
+          }
+
+          .color {
+            @apply h-3.5 w-3.5 rounded-full bg-zinc-400;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+.file__input {
+  @apply hidden;
+}

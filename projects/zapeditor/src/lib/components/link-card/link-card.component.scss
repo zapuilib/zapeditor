@@ -1,0 +1,7 @@
+form {
+  @apply flex flex-col items-start gap-y-3 p-3;
+
+  zap-input {
+    @apply w-full;
+  }
+}

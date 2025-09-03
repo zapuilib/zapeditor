@@ -1,0 +1,242 @@
+<div class="editor__toolbar">
+  <div class="tools">
+    <div class="tool__group">
+      <div class="tool__dropdown__wrapper">
+        <button
+          class="tool__dropdown"
+          tabindex="0"
+          (click)="toggleDropdown('block_style')"
+          (keydown.enter)="toggleDropdown('block_style')"
+        >
+          <div class="trigger">
+            <span>Tt</span>
+            <i class="fa-regular fa-chevron-down"></i>
+          </div>
+        </button>
+        @if (showDropdown === 'block_style') {
+        <div class="dropdown__content" role="list">
+          @for (style of blockStyles; track $index) {
+          <div
+            class="option"
+            role="listitem"
+            tabindex="0"
+            (click)="selectBlockStyle($event, style.value)"
+            (keydown.enter)="selectBlockStyle($event, style.value)"
+          >
+            <span [ngClass]="style.value">{{ style.label }}</span>
+            <span class="shortcut"> {{ style.cmd }} </span>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    <div class="tool__group">
+      <button tabindex="0" (click)="undo.emit()">
+        <i class="fa-regular fa-arrow-u-turn-up-left"></i>
+      </button>
+      <button tabindex="0" (click)="redo.emit()">
+        <i class="fa-regular fa-arrow-u-turn-up-right"></i>
+      </button>
+    </div>
+    <div class="tool__group">
+      <button tabindex="0" (click)="bold.emit()">
+        <i class="fa-regular fa-bold"></i>
+      </button>
+      <button tabindex="0" (click)="italic.emit()">
+        <i class="fa-regular fa-italic"></i>
+      </button>
+      <button tabindex="0" (click)="underline.emit()">
+        <i class="fa-regular fa-underline"></i>
+      </button>
+      <div class="tool__dropdown__wrapper">
+        <button
+          tabindex="0"
+          (click)="toggleDropdown('text_formatting')"
+          class="tool__dropdown !px-0"
+        >
+          <i class="fa-regular fa-ellipsis-vertical"></i>
+        </button>
+        @if (showDropdown === 'text_formatting') {
+        <div class="dropdown__content" role="list">
+          @for (style of textFormattingStyles; track $index) {
+          <div
+            class="option"
+            role="listitem"
+            tabindex="0"
+            (click)="selectTextFormattingOptions($event, style.value)"
+            (keydown.enter)="selectTextFormattingOptions($event, style.value)"
+          >
+            <span>{{ style.label }}</span>
+            <span class="shortcut">{{ style.cmd }}</span>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    <div class="tool__group">
+      <button
+        tabindex="0"
+        (click)="align.emit('left')"
+        (keydown.enter)="align.emit('left')"
+      >
+        <i class="fa-regular fa-align-left"></i>
+      </button>
+      <button
+        tabindex="0"
+        (click)="align.emit('center')"
+        (keydown.enter)="align.emit('center')"
+      >
+        <i class="fa-regular fa-align-center"></i>
+      </button>
+      <button
+        tabindex="0"
+        (click)="align.emit('right')"
+        (keydown.enter)="align.emit('right')"
+      >
+        <i class="fa-regular fa-align-right"></i>
+      </button>
+      <button
+        tabindex="0"
+        (click)="align.emit('justify')"
+        (keydown.enter)="align.emit('justify')"
+      >
+        <i class="fa-regular fa-align-justify"></i>
+      </button>
+    </div>
+    <div class="tool__group">
+      <button
+        tabindex="0"
+        (click)="list.emit('bullet')"
+        (keydown.enter)="list.emit('bullet')"
+      >
+        <i class="fa-regular fa-list-ul"></i>
+      </button>
+      <button
+        tabindex="0"
+        (click)="list.emit('numbered')"
+        (keydown.enter)="list.emit('numbered')"
+      >
+        <i class="fa-regular fa-list-ol"></i>
+      </button>
+      <button
+        tabindex="0"
+        (click)="list.emit('todo')"
+        (keydown.enter)="list.emit('todo')"
+      >
+        <i class="fa-regular fa-list-check"></i>
+      </button>
+    </div>
+    <div class="tool__group">
+      <button tabindex="0" (click)="at.emit()" (keydown.enter)="at.emit()">
+        <i class="fa-regular fa-at"></i>
+      </button>
+      <div class="tool__dropdown__wrapper">
+        <button
+          class="tool__dropdown"
+          tabindex="0"
+          (click)="toggleDropdown('color')"
+          (keydown.enter)="toggleDropdown('color')"
+        >
+          <div class="trigger">
+            <span class="color" [style.background]="currentColor()"></span>
+          </div>
+        </button>
+        @if (showDropdown === 'color') {
+        <div class="dropdown__content color__dropdown" role="list">
+          @for (color of colors; track $index) {
+          <div
+            class="option"
+            role="listitem"
+            tabindex="0"
+            [style.background]="color.value"
+            (click)="selectColor($event, color.value)"
+            (keydown.enter)="selectColor($event, color.value)"
+          >
+            <span class="sr-only">{{ color.label }}</span>
+          </div>
+          }
+        </div>
+        }
+      </div>
+      <div class="tool__dropdown__wrapper">
+        <button
+          class="tool__dropdown"
+          tabindex="0"
+          [disabled]="isOnLink()"
+          (click)="toggleDropdown('link')"
+          (keydown.enter)="toggleDropdown('link')"
+        >
+          <div><i class="fa-regular fa-link"></i></div>
+        </button>
+        @if (showDropdown === 'link') {
+        <div class="dropdown__content link__editor">
+          <hub-editor-link-card
+            [href]="href()"
+            [text]="text()"
+            (add)="addLink($event)"
+          ></hub-editor-link-card>
+        </div>
+        }
+      </div>
+      <input
+        #fileInput
+        type="file"
+        class="file__input"
+        (change)="file.emit($event)"
+      />
+      <button
+        tabindex="0"
+        (click)="fileInput.click()"
+        (keydown.enter)="fileInput.click()"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 46 46"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M37.2798 0.319824H8.71982C4.08982 0.319824 0.319824 4.07982 0.319824 8.71982V37.2798C0.319824 41.9098 4.08982 45.6798 8.71982 45.6798H37.2798C41.9098 45.6798 45.6798 41.9098 45.6798 37.2798V8.71982C45.6798 4.08982 41.9198 0.319824 37.2798 0.319824ZM43.1598 37.2798C43.1598 40.5198 40.5198 43.1598 37.2798 43.1598H8.71982C5.47982 43.1598 2.83982 40.5198 2.83982 37.2798V35.7498L14.2498 25.3498C14.4498 25.1698 14.7498 25.1698 14.9598 25.3498L22.2598 32.0498C22.8698 32.6098 23.6598 32.9098 24.4898 32.8498C25.3098 32.7998 26.0698 32.4298 26.6098 31.7998L34.7898 22.3298C34.9198 22.1898 35.0798 22.1498 35.1698 22.1498C35.2498 22.1498 35.4098 22.1498 35.5598 22.2898L43.1798 29.5298L43.1598 37.2798ZM43.1598 26.1898L37.3198 20.4998C36.7198 19.9098 35.8898 19.5998 35.0698 19.6398C34.2298 19.6698 33.4398 20.0598 32.8998 20.6898L24.7198 30.1598C24.5898 30.2998 24.4298 30.3398 24.3498 30.3398C24.2698 30.3398 24.1098 30.3398 23.9598 30.1998L16.6598 23.4998C15.4898 22.4298 13.7198 22.4298 12.5498 23.4998L2.83982 32.3498V8.71982C2.83982 5.47982 5.47982 2.83982 8.71982 2.83982H37.2798C40.5198 2.83982 43.1598 5.47982 43.1598 8.71982V26.1898Z"
+          />
+        </svg>
+      </button>
+      <button tabindex="0" (click)="codeBlock.emit()">
+        <i class="fa-regular fa-code"></i>
+      </button>
+      <div class="tool__dropdown__wrapper">
+        <button
+          tabindex="0"
+          (click)="toggleDropdown('blocks')"
+          (keydown.enter)="toggleDropdown('blocks')"
+        >
+          <i class="fa-regular fa-ellipsis-vertical"></i>
+        </button>
+        @if (showDropdown === 'blocks') {
+        <div class="dropdown__content blocks__dropdown">
+          <div class="search__wrapper">
+            <!-- <zap-input id="search" placeholder="Search" icon="fa-regular fa-search"></zap-input> -->
+          </div>
+          @for (block of blocks; track $index) {
+          <div
+            class="option"
+            role="listitem"
+            tabindex="0"
+            (click)="selectBlock($event, block.value)"
+            (keydown.enter)="selectBlock($event, block.value)"
+          >
+            <img [src]="block.img" [alt]="block.label" />
+            <div class="details">
+              <span>{{ block.label }}</span>
+              <span class="shortcut">{{ block.descp }}</span>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
