@@ -7,6 +7,15 @@
         mono: ['Geist Mono', 'monospace'],
         icon: ['"Font Awesome 7 Pro"'],
       },
+      keyframes: {
+        'slide-from-t-to-b': {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'slide-from-t-to-b': 'slide-from-t-to-b 0.3s ease-in-out',
+      },
     },
     plugins: [],
   }

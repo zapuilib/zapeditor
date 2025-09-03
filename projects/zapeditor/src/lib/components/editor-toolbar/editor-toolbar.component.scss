@@ -12,17 +12,17 @@
       }
 
       button {
-        @apply cursor-pointer rounded-md border-0 bg-transparent px-1 py-0.5 text-zinc-400 outline-0 hover:bg-zinc-400/10;
+        @apply cursor-pointer rounded-md border-0 bg-transparent px-1 py-0.5 text-zinc-200 outline-0 hover:bg-zinc-400/10;
       }
 
       .tool__dropdown__wrapper {
         @apply relative;
 
         .dropdown__content {
-          @apply  absolute z-10 mt-2 min-w-60 rounded-md border border-zinc-400/10 bg-zinc-400;
+          @apply animate-slide-from-t-to-b  absolute z-10 mt-2 min-w-60 rounded-md border border-zinc-400/10 bg-zinc-900;
 
           .option {
-            @apply flex items-center justify-between px-3 py-1.5 hover:bg-zinc-400;
+            @apply flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800/50 cursor-pointer transition-all duration-200 first-of-type:rounded-t-md last-of-type:rounded-b-md;
 
             span {
               @apply text-sm;
@@ -57,7 +57,7 @@
             }
 
             .shortcut {
-              @apply text-xs text-zinc-400;
+              @apply text-xs text-zinc-600;
             }
           }
 
@@ -106,7 +106,7 @@
           @apply flex items-center gap-x-1;
 
           i {
-            @apply text-xs text-zinc-400;
+            @apply text-xs text-zinc-200;
           }
 
           .color {
@@ -117,7 +117,6 @@
     }
   }
 }
-
 
 .file__input {
   @apply hidden;
