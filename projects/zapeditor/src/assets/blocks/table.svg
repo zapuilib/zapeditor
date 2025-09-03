@@ -1,0 +1,24 @@
+<svg width="154" height="150" viewBox="0 0 154 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="154" height="150" fill="#313131" />
+    <path
+        d="M8 15C8 11.6863 10.6863 9 14 9H141C144.314 9 147 11.6863 147 15V136C147 139.314 144.314 142 141 142H14C10.6863 142 8 139.314 8 136V15Z"
+        fill="white" fill-opacity="0.05" />
+    <path
+        d="M8 32C8 28.6863 10.6863 26 14 26H141C144.314 26 147 28.6863 147 32V117C147 120.314 144.314 123 141 123H14C10.6863 123 8 120.314 8 117V32Z"
+        fill="white" fill-opacity="0.15" />
+    <rect x="8" y="56" width="139" height="31" fill="#09090B" fill-opacity="0.1" />
+    <rect x="16.25" y="38.25" width="7.5" height="7.5" rx="0.75" stroke="white" stroke-opacity="0.2"
+        stroke-width="0.5" />
+    <rect x="16.25" y="67.25" width="7.5" height="7.5" rx="0.75" stroke="white" stroke-opacity="0.2"
+        stroke-width="0.5" />
+    <rect x="16.25" y="99.25" width="7.5" height="7.5" rx="0.75" stroke="white" stroke-opacity="0.2"
+        stroke-width="0.5" />
+    <path d="M96 26L96 123" stroke="#09090B" stroke-opacity="0.1" stroke-width="0.5" />
+    <path d="M32 68H68V74H32V68Z" fill="white" fill-opacity="0.5" />
+    <path d="M104 68H126V74H104V68Z" fill="white" fill-opacity="0.5" />
+    <rect x="32" y="99" width="55" height="6" fill="white" fill-opacity="0.2" />
+    <rect x="32" y="106" width="30" height="6" fill="white" fill-opacity="0.2" />
+    <rect x="104" y="99" width="27" height="6" fill="white" fill-opacity="0.2" />
+    <rect x="32" y="39" width="49" height="6" fill="white" fill-opacity="0.2" />
+    <rect x="104" y="39" width="29" height="6" fill="white" fill-opacity="0.2" />
+</svg>

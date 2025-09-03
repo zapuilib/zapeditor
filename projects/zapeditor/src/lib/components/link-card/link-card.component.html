@@ -1,19 +1,20 @@
 <form [formGroup]="form">
-  <!-- <zap-input
-    id="link"
-    label="Enter a link here"
-    placeholder="Enter here"
-    formControlName="href"
-    (keyup.enter)="onEnter($event)"
-    zapClass="label:!text-xs label:!text-secondary-40 label:!w-max"></zap-input>
-  <zap-input
-    id="text"
-    label="Display text here (optional)"
-    placeholder="Enter here"
-    formControlName="text"
-    (keyup.enter)="onEnter($event)"
-    zapClass="label:!text-xs label:!text-secondary-40 label:!w-max">
-  </zap-input> -->
-
-  date
+  <div class="field">
+    <label for="link">Enter a link here</label>
+    <input
+      id="link"
+      formControlName="href"
+      placeholder="Enter a link here"
+      (keyup.enter)="onEnter($event)"
+    />
+  </div>
+  <div class="field">
+    <label for="text">Display text here (optional)</label>
+    <input
+      id="text"
+      formControlName="text"
+      placeholder="Enter here"
+      (keyup.enter)="onEnter($event)"
+    />
+  </div>
 </form>

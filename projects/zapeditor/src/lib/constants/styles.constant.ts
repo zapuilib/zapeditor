@@ -41,12 +41,12 @@ export const BLOCKS = [
     label: 'Divider',
     value: 'hr',
     descp: 'Add a divider to your content.',
-    img: '/assets/blocks/divider.png',
+    img: '/assets/blocks/divider.svg',
   },
-  {
-    label: 'Table',
-    value: 'table',
-    descp: 'Add a table to your content.',
-    img: '/assets/blocks/table.png',
-  },
+  // {
+  //   label: 'Table',
+  //   value: 'table',
+  //   descp: 'Add a table to your content.',
+  //   img: '/assets/blocks/table.svg',
+  // },
 ];

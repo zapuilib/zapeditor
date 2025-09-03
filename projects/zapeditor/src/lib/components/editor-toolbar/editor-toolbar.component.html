@@ -217,7 +217,11 @@
         @if (showDropdown === 'blocks') {
         <div class="dropdown__content blocks__dropdown">
           <div class="search__wrapper">
-            <!-- <zap-input id="search" placeholder="Search" icon="fa-regular fa-search"></zap-input> -->
+            <input
+              type="text"
+              id="search"
+              placeholder="Search"
+            />
           </div>
           @for (block of blocks; track $index) {
           <div

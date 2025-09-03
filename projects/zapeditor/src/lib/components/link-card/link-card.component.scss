@@ -1,7 +1,15 @@
 form {
-  @apply flex flex-col items-start gap-y-3 p-3;
+  @apply flex flex-col items-start gap-y-5 p-3;
 
-  zap-input {
-    @apply w-full;
+  label {
+    @apply text-xs font-medium text-zinc-500;
+  }
+
+  input {
+    @apply border w-full border-zinc-400/10 bg-zinc-900 px-3 py-2 rounded-md text-sm placeholder:text-zinc-600 outline-none focus:border-zinc-200;
+  }
+
+  .field {
+    @apply flex flex-col  gap-y-2 w-full;
   }
 }
