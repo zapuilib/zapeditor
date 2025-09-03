@@ -43,6 +43,12 @@ export const BLOCKS = [
     descp: 'Add a divider to your content.',
     img: '/assets/blocks/divider.svg',
   },
+  {
+    label: 'Quote',
+    value: 'quote',
+    descp: 'Add a quote block to your content.',
+    img: '/assets/blocks/quote.svg',
+  },
   // {
   //   label: 'Table',
   //   value: 'table',

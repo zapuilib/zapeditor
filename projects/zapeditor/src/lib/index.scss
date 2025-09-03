@@ -1,6 +1,36 @@
 .ProseMirror {
   @apply relative min-h-20 px-8 py-6 focus:outline-none;
 
+  a {
+    @apply text-zinc-200 underline;
+  }
+
+  h1 {
+    @apply text-2xl font-medium;
+  }
+  
+  h3 {
+    @apply text-lg font-medium;
+  }
+
+  h2 {
+    @apply text-xl font-medium;
+  }
+
+  h4 {
+    @apply text-base font-medium;
+  }
+
+  h5 {
+    @apply text-sm font-medium;
+  }
+
+  h6 {
+    @apply text-xs font-medium;
+  }
+
+  
+
   * {
     &::selection {
       @apply bg-[#264f78];
@@ -250,6 +280,19 @@
   @apply my-5 h-px w-full border-none bg-zinc-400/10;
 }
 
+.hub__editor__blockquote {
+  @apply py-3 pl-4 italic text-zinc-300 relative;
+  
+  &::before {
+    @apply absolute left-0 top-0 h-full w-1 bg-zinc-400/30 rounded-full;
+    content: '';
+  }
+  
+  p {
+    @apply m-0;
+  }
+}
+
 .mention {
   @apply inline whitespace-nowrap rounded-full bg-blue-500 px-1.5 py-0.5 text-xs font-medium text-zinc-200;
 
@@ -453,3 +496,5 @@
   @apply absolute m-[-1px] h-px w-px overflow-hidden whitespace-nowrap border-0 p-0;
   clip: rect(0, 0, 0, 0);
 }
+
+@import './plugins/slash/slash.plugin.scss';

@@ -643,6 +643,41 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         this.editorView.dispatch(tr);
         this.editorView.focus();
       }
+    } else if (blockType === 'quote') {
+      const blockquote = state.schema.nodes['blockquote'];
+      if (blockquote) {
+        const $from = state.selection.$from;
+        const parent = $from.parent;
+        const pos = $from.pos;
+        const start = $from.start();
+        const end = $from.end();
+        
+        // Check if current line is empty (only whitespace or no content)
+        const isEmpty = parent.textContent.trim() === '' && pos === start;
+        
+        let tr = state.tr;
+        let newPos = pos;
+        
+        if (isEmpty) {
+          // Replace current empty paragraph with blockquote containing a paragraph
+          const paragraph = state.schema.nodes['paragraph'];
+          const paragraphNode = paragraph.create();
+          const blockquoteNode = blockquote.create({}, paragraphNode);
+          tr = tr.replaceWith(start - 1, end + 1, blockquoteNode);
+          newPos = start;
+        } else {
+          // Insert blockquote with paragraph at current position
+          const paragraph = state.schema.nodes['paragraph'];
+          const paragraphNode = paragraph.create();
+          const blockquoteNode = blockquote.create({}, paragraphNode);
+          tr = tr.insert(from, blockquoteNode);
+          newPos = from + 1;
+        }
+        
+        tr = tr.setSelection(TextSelection.near(tr.doc.resolve(newPos)));
+        this.editorView.dispatch(tr);
+        this.editorView.focus();
+      }
     }
   }
 

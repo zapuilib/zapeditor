@@ -1,7 +1,7 @@
 import { Directive } from '@angular/core';
 import { MarkSpec, Schema } from 'prosemirror-model';
 import { EditorView } from 'prosemirror-view';
-import { autoLinkPlugin, linkHoverPlugin, placeholderPlugin, codeMirrorPlugin, addSurrounding, markdownPlugin, mentionPlugin, triggerMention, createTodoListPlugin, createTodoInputRulesPlugin, createTodoKeymapPlugin } from '../plugins';
+import { autoLinkPlugin, linkHoverPlugin, placeholderPlugin, codeMirrorPlugin, addSurrounding, markdownPlugin, mentionPlugin, triggerMention, createTodoListPlugin, createTodoInputRulesPlugin, createTodoKeymapPlugin, slashPlugin } from '../plugins';
 import { MentionUser } from '../interfaces';
 import { redo, undo } from 'prosemirror-history';
 import { history } from 'prosemirror-history';
@@ -205,6 +205,15 @@ export class BaseEditor {
           return ['div', { class: 'hub__editor__divider__wrapper' }, ['hr', { class: 'hub__editor__divider' }]];
         },
       },
+      blockquote: {
+        group: 'block',
+        content: 'block+',
+        defining: true,
+        parseDOM: [{ tag: 'blockquote' }],
+        toDOM() {
+          return ['blockquote', { class: 'hub__editor__blockquote' }, 0];
+        },
+      },
       mention: {
         group: 'inline',
         inline: true,
@@ -352,6 +361,7 @@ export class BaseEditor {
           users: this.users,
           onMentionSearch: this.onMentionSearch
         }),
+        slashPlugin(),
         createTodoListPlugin(),
         createTodoInputRulesPlugin(this.schema),
         createTodoKeymapPlugin(this.schema, this.editorView),

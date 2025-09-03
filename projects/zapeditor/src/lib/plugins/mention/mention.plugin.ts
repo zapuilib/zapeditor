@@ -16,25 +16,35 @@ function getMentionRegex() {
 }
 
 function getMentionMatch($position: any) {
-  const parastart = $position.before();
-  const text = $position.doc.textBetween(parastart, $position.pos, '\n', '\0');
-  const regex = getMentionRegex();
-  const match = text.match(regex);
+  try {
+    // Check if position is valid and has a parent
+    if (!$position || !$position.parent || $position.depth === 0) {
+      return null;
+    }
+    
+    const parastart = $position.before();
+    const text = $position.doc.textBetween(parastart, $position.pos, '\n', '\0');
+    const regex = getMentionRegex();
+    const match = text.match(regex);
 
-  if (match) {
-    const matchIndex = match[0].startsWith(' ') ? match.index! + 1 : match.index!;
-    const matchText = match[0].startsWith(' ') ? match[0].substring(1) : match[0];
-    const from = $position.start() + matchIndex;
-    const to = from + matchText.length;
-    const query = match[2];
+    if (match) {
+      const matchIndex = match[0].startsWith(' ') ? match.index! + 1 : match.index!;
+      const matchText = match[0].startsWith(' ') ? match[0].substring(1) : match[0];
+      const from = $position.start() + matchIndex;
+      const to = from + matchText.length;
+      const query = match[2];
 
-    return {
-      range: { from, to },
-      query,
-    };
+      return {
+        range: { from, to },
+        query,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    // If there's any error getting the mention match, return null
+    return null;
   }
-
-  return null;
 }
 
 function getSuggestions(query: string, users: MentionUser[]): MentionUser[] {
