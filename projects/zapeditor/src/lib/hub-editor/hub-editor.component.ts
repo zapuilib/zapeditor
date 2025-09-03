@@ -19,35 +19,68 @@ import { EditorView } from 'prosemirror-view';
 import { wrapInList, liftListItem } from 'prosemirror-schema-list';
 import { TextSelection } from 'prosemirror-state';
 
-import { HubEditorToolbar } from '../components';
+import { HubEditorToolbar, InlineToolbarComponent } from '../components';
 import { BaseEditor } from './hub-editor.directives';
 import { MentionUser } from '../interfaces';
 
 @Component({
   selector: 'zap-editor',
-  imports: [HubEditorToolbar],
+  imports: [HubEditorToolbar, InlineToolbarComponent],
   template: ` <div class="wysiwyg__editor__wrapper">
-    <hub-editor-toolbar
-      [href]="href()"
-      [text]="text()"
-      [isOnLink]="isOnLink()"
-      [currentColor]="getCurrentColor()"
-      (styleChange)="onStyleChange($event)"
-      (undo)="onUndo()"
-      (redo)="onRedo()"
-      (bold)="onBold()"
-      (italic)="onItalic()"
-      (underline)="onUnderline()"
-      (textFormat)="onTextFormat($event)"
-      (align)="setTextAlign($event)"
-      (list)="onList($event)"
-      (link)="onLink($event)"
-      (linkButtonClick)="onLinkButtonClick()"
-      (codeBlock)="onCodeBlock()"
-      (color)="onColor($event)"
-      (at)="onAt()"
-      (block)="onBlock($event)"></hub-editor-toolbar>
+    @if (toolbar() === 'default') {
+      <hub-editor-toolbar
+        [href]="href()"
+        [text]="text()"
+        [isOnLink]="isOnLink()"
+        [currentColor]="getCurrentColor()"
+        (styleChange)="onStyleChange($event)"
+        (undo)="onUndo()"
+        (redo)="onRedo()"
+        (bold)="onBold()"
+        (italic)="onItalic()"
+        (underline)="onUnderline()"
+        (textFormat)="onTextFormat($event)"
+        (align)="setTextAlign($event)"
+        (list)="onList($event)"
+        (link)="onLink($event)"
+        (linkButtonClick)="onLinkButtonClick()"
+        (codeBlock)="onCodeBlock()"
+        (color)="onColor($event)"
+        (at)="onAt()"
+        (block)="onBlock($event)"></hub-editor-toolbar>
+    }
     <div #editor class="wysiwyg__editor"></div>
+    
+    @if (toolbar() === 'inline' && showInlineToolbar()) {
+      <inline-toolbar
+        [position]="inlineToolbarPosition()"
+        [currentColor]="getCurrentColor()"
+        [isBold]="isBoldActive()"
+        [isItalic]="isItalicActive()"
+        [isUnderline]="isUnderlineActive()"
+        [isStrikethrough]="isStrikethroughActive()"
+        [isCode]="isCodeActive()"
+        [isAlignLeft]="isAlignLeftActive()"
+        [isAlignCenter]="isAlignCenterActive()"
+        [isAlignRight]="isAlignRightActive()"
+        [isAlignJustify]="isAlignJustifyActive()"
+        [isOnLink]="isOnLink()"
+        [href]="href()"
+        [text]="text()"
+        (bold)="onBold()"
+        (italic)="onItalic()"
+        (underline)="onUnderline()"
+        (strikethrough)="onStrikethrough()"
+        (code)="onCode()"
+        (align)="setTextAlign($event)"
+        (color)="onColor($event)"
+        (link)="onLink($event)"
+        (linkButtonClick)="onLinkButtonClick()"
+        (list)="onListInline($event)"
+        (codeBlock)="onCodeBlock()"
+        (blockStyle)="onBlockStyle($event)"
+        (textFormatting)="onTextFormatting($event)"></inline-toolbar>
+    }
   </div>`,
   styleUrl: './hub-editor.component.scss',
 })
@@ -61,6 +94,10 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   href = signal<string>('');
   text = signal<string>('');
   isOnLink = signal<boolean>(false);
+  
+  // Inline toolbar state
+  showInlineToolbar = signal<boolean>(false);
+  inlineToolbarPosition = signal<{ x: number; y: number; position?: 'top' | 'bottom' }>({ x: 0, y: 0, position: 'top' });
 
   constructor() {
     super();
@@ -78,6 +115,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.initializeEditor();
+    this.setupInlineToolbarEvents();
   }
 
   private initializeEditor() {
@@ -87,15 +125,263 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         const newState = this.editorView!.state.apply(transaction);
         this.editorView!.updateState(newState);
         this.updateLinkState();
+        this.updateInlineToolbar();
         this.cdr.detectChanges();
       }
     });
   }
 
+  private setupInlineToolbarEvents() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    // Listen for scroll events to update toolbar position
+    window.addEventListener('scroll', () => {
+      if (this.showInlineToolbar()) {
+        this.updateInlineToolbar();
+      }
+    }, { passive: true });
+    
+    // Listen for resize events
+    window.addEventListener('resize', () => {
+      if (this.showInlineToolbar()) {
+        this.updateInlineToolbar();
+      }
+    }, { passive: true });
+    
+    // Listen for clicks outside to close toolbar
+    document.addEventListener('click', (event) => {
+      if (this.showInlineToolbar()) {
+        const target = event.target as Element;
+        const editorElement = this.editor?.nativeElement;
+        
+        // Check if click is outside the editor
+        if (editorElement && !editorElement.contains(target)) {
+          this.showInlineToolbar.set(false);
+        }
+      }
+    }, { passive: true });
+  }
 
+  private updateInlineToolbar() {
+    if (this.toolbar() !== 'inline' || !this.editorView) {
+      this.showInlineToolbar.set(false);
+      return;
+    }
+
+    const { state } = this.editorView;
+    const { selection } = state;
+    const { from, to } = selection;
+
+    // Only show toolbar if there's a text selection
+    if (from === to) {
+      this.showInlineToolbar.set(false);
+      return;
+    }
+
+    try {
+      // Get the coordinates of the selection
+      let startCoords, endCoords;
+      
+      // For select all, find the first and last visible text positions
+      if (from === 0 && to === state.doc.content.size) {
+        // This is likely a select all - find first and last visible text
+        let firstTextPos = 0;
+        let lastTextPos = state.doc.content.size;
+        
+        // Find the first text position
+        state.doc.descendants((node, pos) => {
+          if (node.isText && node.text && node.text.length > 0) {
+            firstTextPos = pos;
+            return false; // Stop searching
+          }
+          return true;
+        });
+        
+        // Find the last text position
+        state.doc.descendants((node, pos) => {
+          if (node.isText && node.text && node.text.length > 0) {
+            lastTextPos = pos + node.nodeSize;
+          }
+          return true;
+        });
+        
+        startCoords = this.editorView.coordsAtPos(firstTextPos);
+        endCoords = this.editorView.coordsAtPos(lastTextPos);
+      } else {
+        startCoords = this.editorView.coordsAtPos(from);
+        endCoords = this.editorView.coordsAtPos(to);
+      }
+      
+      // Get editor container bounds
+      const editorRect = this.editor.nativeElement.getBoundingClientRect();
+      
+      // Get the current text alignment - handle multi-node selections
+      const $from = state.selection.$from;
+      let textAlign = 'left'; // default
+      
+      // For multi-node selections (like select all), check the first text block
+      if (from !== to) {
+        // Find the first text block in the selection
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          if (node.isTextblock && (node.type.name === 'paragraph' || node.type.name === 'heading')) {
+            textAlign = node.attrs['align'] || 'left';
+            return false; // Stop after finding the first text block
+          }
+          return true;
+        });
+      } else {
+        // Single cursor position
+        const parent = $from.parent;
+        textAlign = parent.attrs['align'] || 'left';
+      }
+      
+      // For multi-line selections, use the first visible line
+      let selectionCenterX, selectionTop, selectionBottom;
+      
+      if (startCoords.top === endCoords.top) {
+        // Single line selection
+        selectionTop = startCoords.top;
+        selectionBottom = startCoords.bottom;
+        
+        // Position based on text alignment
+        if (textAlign === 'center') {
+          selectionCenterX = (startCoords.left + endCoords.left) / 2;
+        } else if (textAlign === 'right') {
+          selectionCenterX = endCoords.left;
+        } else {
+          // left or justify
+          selectionCenterX = startCoords.left;
+        }
+      } else {
+        // Multi-line selection - use the first line that's visible
+        selectionTop = startCoords.top;
+        selectionBottom = startCoords.bottom;
+        
+        // For multi-line, position based on alignment of the first line
+        if (textAlign === 'center') {
+          selectionCenterX = startCoords.left + (startCoords.right - startCoords.left) / 2;
+        } else if (textAlign === 'right') {
+          selectionCenterX = startCoords.right;
+        } else {
+          // left or justify
+          selectionCenterX = startCoords.left;
+        }
+      }
+      
+      // Toolbar dimensions (approximate)
+      const toolbarWidth = 300; // Approximate width
+      const toolbarHeight = 40; // Approximate height
+      const offset = 1; // Distance from selection - very close positioning
+      
+      let x = selectionCenterX;
+      let y = selectionTop;
+      let position: 'top' | 'bottom' = 'top'; // Default position
+      
+      // Always position on top - no exceptions, with additional 100px offset
+      y = selectionTop - toolbarHeight - offset + 40;
+      position = 'top';
+      
+      // Adjust horizontal positioning based on text alignment
+      if (textAlign === 'center') {
+        // Center the toolbar
+        if (x - toolbarWidth / 2 < editorRect.left) {
+          x = editorRect.left + toolbarWidth / 2 + offset;
+        } else if (x + toolbarWidth / 2 > editorRect.right) {
+          x = editorRect.right - toolbarWidth / 2 - offset;
+        }
+      } else if (textAlign === 'right') {
+        // Align toolbar to the right
+        x = Math.min(x, editorRect.right - toolbarWidth / 2 - offset);
+        if (x - toolbarWidth / 2 < editorRect.left) {
+          x = editorRect.left + toolbarWidth / 2 + offset;
+        }
+      } else {
+        // left or justify - align toolbar to the left
+        x = Math.max(x, editorRect.left + toolbarWidth / 2 + offset);
+        if (x + toolbarWidth / 2 > editorRect.right) {
+          x = editorRect.right - toolbarWidth / 2 - offset;
+        }
+      }
+      
+      this.inlineToolbarPosition.set({ x, y, position });
+      this.showInlineToolbar.set(true);
+    } catch (error) {
+      // If there's an error getting coordinates, hide the toolbar
+      console.warn('Error updating inline toolbar position:', error);
+      this.showInlineToolbar.set(false);
+    }
+  }
 
   private updateLinkState() {
     this.isOnLink.set(this.isCursorOnLink());
+  }
+
+  // Formatting state checkers
+  isBoldActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { from, to } = state.selection;
+    return state.doc.rangeHasMark(from, to, state.schema.marks['bold']);
+  }
+
+  isItalicActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { from, to } = state.selection;
+    return state.doc.rangeHasMark(from, to, state.schema.marks['italic']);
+  }
+
+  isUnderlineActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { from, to } = state.selection;
+    return state.doc.rangeHasMark(from, to, state.schema.marks['underline']);
+  }
+
+  isStrikethroughActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { from, to } = state.selection;
+    return state.doc.rangeHasMark(from, to, state.schema.marks['strike']);
+  }
+
+  isCodeActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { from, to } = state.selection;
+    return state.doc.rangeHasMark(from, to, state.schema.marks['code']);
+  }
+
+  isAlignLeftActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { $from } = state.selection;
+    const parent = $from.parent;
+    return parent.attrs['align'] === 'left' || !parent.attrs['align'];
+  }
+
+  isAlignCenterActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { $from } = state.selection;
+    const parent = $from.parent;
+    return parent.attrs['align'] === 'center';
+  }
+
+  isAlignRightActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { $from } = state.selection;
+    const parent = $from.parent;
+    return parent.attrs['align'] === 'right';
+  }
+
+  isAlignJustifyActive(): boolean {
+    if (!this.editorView) return false;
+    const { state } = this.editorView;
+    const { $from } = state.selection;
+    const parent = $from.parent;
+    return parent.attrs['align'] === 'justify';
   }
 
   private applyBlock(nodeType: any, attrs?: any) {
@@ -143,6 +429,11 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     const { bold } = this.editorView.state.schema.marks;
     toggleMark(bold)(this.editorView.state, this.editorView.dispatch);
     this.editorView.focus();
+    
+    // Update toolbar position after formatting change
+    setTimeout(() => {
+      this.updateInlineToolbar();
+    }, 0);
   }
 
   onItalic() {
@@ -150,6 +441,11 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     const { italic } = this.editorView.state.schema.marks;
     toggleMark(italic)(this.editorView.state, this.editorView.dispatch);
     this.editorView.focus();
+    
+    // Update toolbar position after formatting change
+    setTimeout(() => {
+      this.updateInlineToolbar();
+    }, 0);
   }
 
   onUnderline() {
@@ -157,6 +453,86 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     const { underline } = this.editorView.state.schema.marks;
     toggleMark(underline)(this.editorView.state, this.editorView.dispatch);
     this.editorView.focus();
+    
+    // Update toolbar position after formatting change
+    setTimeout(() => {
+      this.updateInlineToolbar();
+    }, 0);
+  }
+
+  onStrikethrough() {
+    if (!this.editorView) return;
+    const { strike } = this.editorView.state.schema.marks;
+    toggleMark(strike)(this.editorView.state, this.editorView.dispatch);
+    this.editorView.focus();
+    
+    // Update toolbar position after formatting change
+    setTimeout(() => {
+      this.updateInlineToolbar();
+    }, 0);
+  }
+
+  onCode() {
+    if (!this.editorView) return;
+    const { code } = this.editorView.state.schema.marks;
+    toggleMark(code)(this.editorView.state, this.editorView.dispatch);
+    this.editorView.focus();
+    
+    // Update toolbar position after formatting change
+    setTimeout(() => {
+      this.updateInlineToolbar();
+    }, 0);
+  }
+
+  onBlockStyle(value: string) {
+    this.onStyleChange(value);
+  }
+
+  onTextFormatting(value: string) {
+    if (!this.editorView) return;
+    
+    switch (value) {
+      case 'strikethrough':
+        this.onStrikethrough();
+        break;
+      case 'code':
+        this.onCode();
+        break;
+      case 'superscript':
+        this.onSuperscript();
+        break;
+      case 'subscript':
+        this.onSubscript();
+        break;
+    }
+  }
+
+  onSuperscript() {
+    if (!this.editorView) return;
+    const { sup } = this.editorView.state.schema.marks;
+    if (sup) {
+      toggleMark(sup)(this.editorView.state, this.editorView.dispatch);
+      this.editorView.focus();
+      
+      // Update toolbar position after formatting change
+      setTimeout(() => {
+        this.updateInlineToolbar();
+      }, 0);
+    }
+  }
+
+  onSubscript() {
+    if (!this.editorView) return;
+    const { sub } = this.editorView.state.schema.marks;
+    if (sub) {
+      toggleMark(sub)(this.editorView.state, this.editorView.dispatch);
+      this.editorView.focus();
+      
+      // Update toolbar position after formatting change
+      setTimeout(() => {
+        this.updateInlineToolbar();
+      }, 0);
+    }
   }
 
   onStyleChange(value: string) {
@@ -276,6 +652,11 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     if (tr.docChanged) {
       this.editorView.dispatch(tr.scrollIntoView());
       this.editorView.focus();
+      
+      // Update toolbar position after alignment change
+      setTimeout(() => {
+        this.updateInlineToolbar();
+      }, 0);
     }
   }
 
@@ -336,6 +717,77 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     this.focusEditor();
   }
 
+  onListInline(event: any) {
+    if (!this.editorView) return;
+
+    const { state } = this.editorView;
+    const { bullet_list, ordered_list, todo_list, todo_list_item } = state.schema.nodes;
+
+    let listType;
+    if (event === 'bullet') listType = bullet_list;
+    else if (event === 'numbered') listType = ordered_list;
+    else if (event === 'todo') listType = todo_list;
+    else return;
+
+    // If there's a text selection, handle it properly
+    let workingState = state;
+    if (state.selection.from !== state.selection.to) {
+      // Check if this is a "select all" (from=0, to=doc.content.size)
+      const isSelectAll = state.selection.from === 0 && state.selection.to === state.doc.content.size;
+      
+      if (isSelectAll) {
+        // For select all, just collapse to the beginning of the document
+        // This will make the list command work on the first paragraph
+        const tr = state.tr.setSelection(TextSelection.create(state.doc, 1));
+        workingState = state.apply(tr);
+      } else {
+        // For regular selections, collapse to the end
+        const tr = state.tr.setSelection(TextSelection.create(state.doc, state.selection.to));
+        workingState = state.apply(tr);
+      }
+    }
+
+    const $from = workingState.selection.$from;
+    let inList = false;
+    let currentListType = null;
+    let inTodoItem = false;
+
+    let depth = $from.depth;
+    while (depth > 0) {
+      const node = $from.node(depth);
+      if (node.type === todo_list_item) {
+        inTodoItem = true;
+        break;
+      }
+      if (node.type === bullet_list || node.type === ordered_list || node.type === todo_list) {
+        inList = true;
+        currentListType = node.type;
+        break;
+      }
+      depth--;
+    }
+
+    // If we're inside a todo item, don't allow creating any lists
+    if (inTodoItem) {
+      return;
+    }
+
+    if (inList) {
+      if (currentListType === listType) {
+        // Same list type - lift out of list
+        const listItemType = listType === todo_list ? 'todo_list_item' : 'list_item';
+        liftListItem(workingState.schema.nodes[listItemType])(workingState, this.editorView.dispatch, this.editorView);
+      } else {
+        // Different list type - convert while maintaining nesting
+        this.convertListType(currentListType, listType, workingState);
+      }
+    } else {
+      wrapInList(listType)(workingState, this.editorView.dispatch, this.editorView);
+    }
+
+    this.focusEditor();
+  }
+
   private convertListType(currentListType: any, newListType: any, state: any) {
     if (!this.editorView) return;
 
@@ -383,6 +835,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     
     this.editorView.dispatch(tr);
   }
+
+
 
   onCodeBlock() {
     if (!this.editorView) return;
@@ -549,6 +1003,11 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     }
     
     this.editorView.focus();
+    
+    // Update toolbar position after color change
+    setTimeout(() => {
+      this.updateInlineToolbar();
+    }, 0);
   }
 
   getCurrentColor(): string {

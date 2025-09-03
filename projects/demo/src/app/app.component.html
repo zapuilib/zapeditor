@@ -1,4 +1,19 @@
-<zap-editor 
-  [usersInput]="users()" 
-  (mentionSearch)="onMentionSearch($event)">
-</zap-editor>
+<div class="demo__container">
+  <div class="demo__section">
+    <h2>Default Toolbar</h2>
+    <zap-editor 
+      [usersInput]="users()" 
+      (mentionSearch)="onMentionSearch($event)">
+    </zap-editor>
+  </div>
+  
+  <div class="demo__section">
+    <h2>Inline Toolbar</h2>
+    <p class="demo__hint">Select text to see the floating toolbar</p>
+    <zap-editor 
+      toolbar="inline"
+      [usersInput]="users()" 
+      (mentionSearch)="onMentionSearch($event)">
+    </zap-editor>
+  </div>
+</div>
