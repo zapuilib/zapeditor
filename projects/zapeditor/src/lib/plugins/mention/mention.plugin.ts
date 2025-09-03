@@ -5,17 +5,11 @@ import { MentionPluginState, MentionUser } from '../../interfaces';
 
 export const mentionPluginKey = new PluginKey<MentionPluginState>('mention');
 
-const mockUsers: MentionUser[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', avatar: '/assets/avatars/mike.png' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', avatar: '/assets/avatars/mike.png' },
-  { id: '3', name: 'Mike Johnson', email: 'mike@example.com', avatar: '/assets/avatars/mike.png' },
-  { id: '4', name: 'Sarah Wilson', email: 'sarah@example.com', avatar: '/assets/avatars/mike.png' },
-  { id: '5', name: 'David Brown', email: 'david@example.com', avatar: '/assets/avatars/mike.png' },
-  { id: '6', name: 'Sarah Wilson', email: 'sarah@example.com', avatar: '/assets/avatars/mike.png' },
-  { id: '7', name: 'Sarah Wilson', email: 'sarah@example.com', avatar: '/assets/avatars/mike.png' },
-  { id: '8', name: 'Sarah Wilson', email: 'sarah@example.com', avatar: '/assets/avatars/mike.png' },
-
-];
+export interface MentionPluginOptions {
+  users: MentionUser[];
+  onMentionSearch?: (query: string) => void;
+  onUsersUpdate?: (users: MentionUser[]) => void;
+}
 
 function getMentionRegex() {
   return /(^|\s)@(\w*)$/;
@@ -43,10 +37,10 @@ function getMentionMatch($position: any) {
   return null;
 }
 
-function getSuggestions(query: string): MentionUser[] {
-  if (!query) return mockUsers;
+function getSuggestions(query: string, users: MentionUser[]): MentionUser[] {
+  if (!query) return users;
 
-  return mockUsers
+  return users
     .filter(
       (user) =>
         user.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -89,11 +83,13 @@ function insertMention(view: EditorView, user: MentionUser, range: { from: numbe
   }
 }
 
-export function mentionPlugin() {
+export function mentionPlugin(options: MentionPluginOptions) {
   let suggestionElement: HTMLElement | null = null;
   let showTimeoutId: number | null = null;
   let hoverEnabled = true;
   let clickOutsideHandler: ((event: MouseEvent) => void) | null = null;
+  let currentUsers = options.users;
+  let searchCallback = options.onMentionSearch;
 
   function createSuggestionElement(): HTMLElement {
     if (suggestionElement) {
@@ -199,7 +195,17 @@ export function mentionPlugin() {
     hoverEnabled = true;
   }
 
-  return new Plugin<MentionPluginState>({
+  // Store reference to update function
+  const updateUsers = (newUsers: MentionUser[]) => {
+    currentUsers = newUsers;
+  };
+
+  // Expose update function through options
+  if (options.onUsersUpdate) {
+    options.onUsersUpdate = updateUsers;
+  }
+
+  const plugin = new Plugin<MentionPluginState>({
     key: mentionPluginKey,
     state: {
       init(): MentionPluginState {
@@ -233,7 +239,13 @@ export function mentionPlugin() {
         const match = getMentionMatch($from);
 
         if (match) {
-          const suggestions = getSuggestions(match.query);
+          // Emit search event if callback is provided
+          if (searchCallback) {
+            searchCallback(match.query);
+          }
+          
+          // Use current users (which may have been updated)
+          const suggestions = getSuggestions(match.query, currentUsers);
           const newState = {
             active: true,
             range: match.range,
@@ -380,6 +392,11 @@ export function mentionPlugin() {
       };
     },
   });
+
+  // Add updateUsers method to the plugin
+  (plugin as any).updateUsers = updateUsers;
+  
+  return plugin;
 }
 
 export function triggerMention(view: EditorView) {

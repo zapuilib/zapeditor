@@ -5,9 +5,13 @@ import {
   Component,
   ElementRef,
   inject,
+  input,
+  model,
+  output,
   PLATFORM_ID,
   signal,
   ViewChild,
+  effect,
 } from '@angular/core';
 import { setBlockType, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
@@ -17,6 +21,7 @@ import { TextSelection } from 'prosemirror-state';
 
 import { HubEditorToolbar } from '../components';
 import { BaseEditor } from './hub-editor.directives';
+import { MentionUser } from '../interfaces';
 
 @Component({
   selector: 'zap-editor',
@@ -48,11 +53,30 @@ import { BaseEditor } from './hub-editor.directives';
 })
 export class ZapEditor extends BaseEditor implements AfterViewInit {
   @ViewChild('editor') editor!: ElementRef<HTMLDivElement>;
+  toolbar = input<'inline' | 'default'>('default');
+  usersInput = model<MentionUser[]>([]);
+  mentionSearch = output<string>();
   protected readonly platformId = inject(PLATFORM_ID);
   protected readonly cdr = inject(ChangeDetectorRef);
   href = signal<string>('');
   text = signal<string>('');
   isOnLink = signal<boolean>(false);
+
+  constructor() {
+    super();
+    
+    // Set up effect to update users in base class
+    effect(() => {
+      this.users = this.usersInput();
+      // Update mention plugin with new users
+      this.updateMentionUsers(this.users);
+    });
+    
+    // Set up mention search callback
+    this.onMentionSearch = (query: string) => {
+      this.mentionSearch.emit(query);
+    };
+  }
 
   ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -70,6 +94,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
       }
     });
   }
+
+
 
   private updateLinkState() {
     this.isOnLink.set(this.isCursorOnLink());

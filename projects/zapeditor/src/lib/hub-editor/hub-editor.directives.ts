@@ -2,6 +2,7 @@ import { Directive } from '@angular/core';
 import { MarkSpec, Schema } from 'prosemirror-model';
 import { EditorView } from 'prosemirror-view';
 import { autoLinkPlugin, linkHoverPlugin, placeholderPlugin, codeMirrorPlugin, addSurrounding, markdownPlugin, mentionPlugin, triggerMention, createTodoListPlugin, createTodoInputRulesPlugin, createTodoKeymapPlugin } from '../plugins';
+import { MentionUser } from '../interfaces';
 import { redo, undo } from 'prosemirror-history';
 import { history } from 'prosemirror-history';
 import { EditorState, TextSelection } from 'prosemirror-state';
@@ -11,7 +12,10 @@ import { keymap } from 'prosemirror-keymap';
 
 @Directive({ selector: '[hubEditor]' })
 export class BaseEditor {
-  protected editorView: EditorView | null = null;
+  protected editorView: EditorView | null = null
+  protected users: MentionUser[] = [];
+  protected onMentionSearch?: (query: string) => void;
+  protected mentionPlugin: any = null;;
 
   protected schema = new Schema({
     nodes: {
@@ -328,6 +332,12 @@ export class BaseEditor {
     },
   });
 
+  protected updateMentionUsers(newUsers: MentionUser[]) {
+    if (this.mentionPlugin && this.mentionPlugin.updateUsers) {
+      this.mentionPlugin.updateUsers(newUsers);
+    }
+  }
+
   protected getState(): EditorState {
     const state = EditorState.create({
       schema: this.schema,
@@ -338,7 +348,10 @@ export class BaseEditor {
         codeMirrorPlugin(),
         addSurrounding(),
         markdownPlugin(this.schema),
-        mentionPlugin(),
+        this.mentionPlugin = mentionPlugin({
+          users: this.users,
+          onMentionSearch: this.onMentionSearch
+        }),
         createTodoListPlugin(),
         createTodoInputRulesPlugin(this.schema),
         createTodoKeymapPlugin(this.schema, this.editorView),
