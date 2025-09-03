@@ -65,14 +65,11 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   constructor() {
     super();
     
-    // Set up effect to update users in base class
     effect(() => {
       this.users = this.usersInput();
-      // Update mention plugin with new users
       this.updateMentionUsers(this.users);
     });
     
-    // Set up mention search callback
     this.onMentionSearch = (query: string) => {
       this.mentionSearch.emit(query);
     };

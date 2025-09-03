@@ -49,10 +49,10 @@ export const BLOCKS = [
     descp: 'Add a quote block to your content.',
     img: '/assets/blocks/quote.svg',
   },
-  // {
-  //   label: 'Table',
-  //   value: 'table',
-  //   descp: 'Add a table to your content.',
-  //   img: '/assets/blocks/table.svg',
-  // },
+  {
+    label: 'Table',
+    value: 'table',
+    descp: 'Add a table to your content.',
+    img: '/assets/blocks/table.svg',
+  },
 ];

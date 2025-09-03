@@ -351,7 +351,7 @@ export class BaseEditor {
     const state = EditorState.create({
       schema: this.schema,
       plugins: [
-        placeholderPlugin('Start writing something'),
+        placeholderPlugin('Type / to add different blocks, add @ to mention your colleagues'),
         autoLinkPlugin(),
         linkHoverPlugin(),
         codeMirrorPlugin(),

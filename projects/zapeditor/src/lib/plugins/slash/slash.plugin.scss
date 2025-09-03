@@ -1,29 +1,25 @@
 .slash__suggestions {
-  @apply absolute bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto z-50 min-w-72 max-w-80 font-sans;
+  @apply absolute bg-zinc-900 border border-zinc-400/10 rounded-lg shadow-lg max-h-[700px] overflow-y-auto z-50 min-w-60 font-sans p-1;
 }
 
-.slash__category {
-  @apply py-2;
-}
-
-.slash__category:not(:last-child) {
-  @apply border-b border-gray-100;
-}
-
-.slash__category__title {
-  @apply px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide;
+.slash__separator {
+  @apply my-1 h-px bg-zinc-400/10;
 }
 
 .slash__suggestion {
-  @apply flex items-center px-3 py-2 cursor-pointer transition-colors duration-150 rounded mx-2;
+  @apply flex items-center justify-between px-1 py-1.5 cursor-pointer transition-colors duration-150 rounded;
 }
 
 .slash__suggestion__active {
-  @apply bg-gray-50;
+  @apply bg-zinc-800;
 }
 
 .slash__suggestion__icon {
-  @apply w-6 h-6 flex items-center justify-center bg-gray-100 rounded mr-3 text-xs font-semibold text-gray-600 flex-shrink-0;
+  @apply w-4 h-4 flex items-center justify-center mr-2 text-xs text-zinc-400 flex-shrink-0;
+
+  img {
+    @apply w-4 h-4;
+  }
 }
 
 .slash__suggestion__content {
@@ -31,41 +27,14 @@
 }
 
 .slash__suggestion__title {
-  @apply text-sm font-medium text-gray-900 mb-0.5 leading-tight;
+  @apply text-[12px] font-medium text-zinc-200 leading-tight;
 }
 
-.slash__suggestion__description {
-  @apply text-xs text-gray-500 leading-tight;
+.slash__suggestion__shortcut {
+  @apply text-[10px] text-zinc-500 font-mono ml-1 flex-shrink-0;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .slash__suggestions {
-    @apply bg-gray-800 border-gray-600 shadow-2xl;
-  }
-
-  .slash__category:not(:last-child) {
-    @apply border-gray-700;
-  }
-
-  .slash__category__title {
-    @apply text-gray-400;
-  }
-
-  .slash__suggestion:hover,
-  .slash__suggestion__active {
-    @apply bg-gray-700;
-  }
-
-  .slash__suggestion__icon {
-    @apply bg-gray-700 text-gray-400;
-  }
-
-  .slash__suggestion__title {
-    @apply text-gray-100;
-  }
-
-  .slash__suggestion__description {
-    @apply text-gray-400;
-  }
+/* Hover states */
+.slash__suggestion:hover {
+  @apply bg-zinc-800;
 }

@@ -37,17 +37,17 @@
     }
   }
 
-  p[data-placeholder] {
+  [data-placeholder] {
     @apply relative;
   }
 
-  p[data-placeholder]::before {
-    @apply pointer-events-none absolute transform select-none text-zinc-400 content-[attr(data-placeholder)];
+  [data-placeholder]::before {
+    @apply pointer-events-none absolute top-0 left-0 w-full h-full flex items-center select-none text-zinc-400 text-sm font-normal content-[attr(data-placeholder)];
   }
 
   p,
   strong {
-    @apply text-sm text-zinc-200;
+    @apply text-sm text-zinc-200 leading-relaxed;
   }
 
   li {

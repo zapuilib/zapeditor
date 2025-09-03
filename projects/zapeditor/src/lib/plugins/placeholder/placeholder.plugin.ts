@@ -2,29 +2,32 @@ import { Plugin } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 
 /**
- * This plugin adds a placeholder text to the editor when the document is empty.
+ * This plugin adds a placeholder text to the editor only on the current line where the cursor is positioned.
  * @param text - The text to display as the placeholder.
- * @returns A plugin that adds a placeholder text to the editor when the document is empty.
+ * @returns A plugin that adds a placeholder text only to the current empty line in the editor.
  */
 export function placeholderPlugin(text: string) {
   return new Plugin({
     props: {
       decorations(state) {
-        const { doc } = state;
+        const { doc, selection } = state;
+        const decorations: Decoration[] = [];
 
-        const isEmptyDoc =
-          doc.childCount === 1 &&
-          doc.firstChild?.isTextblock &&
-          doc.firstChild.content.size === 0;
+        // Get the current node where the cursor is positioned
+        const $from = selection.$from;
+        const currentNode = $from.parent;
 
-        if (!isEmptyDoc) return null;
+        // Only add placeholder if the current node is a text block and is empty
+        if (currentNode.isTextblock && currentNode.content.size === 0) {
+          const pos = $from.before();
+          decorations.push(
+            Decoration.node(pos, pos + currentNode.nodeSize, {
+              'data-placeholder': text,
+            })
+          );
+        }
 
-        const decorations = [
-          Decoration.node(0, doc.firstChild!.nodeSize, {
-            'data-placeholder': text,
-          }),
-        ];
-        return DecorationSet.create(doc, decorations);
+        return decorations.length > 0 ? DecorationSet.create(doc, decorations) : null;
       },
     },
   });

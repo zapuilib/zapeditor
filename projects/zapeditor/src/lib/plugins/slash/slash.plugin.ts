@@ -5,51 +5,47 @@ import { SlashPluginState, SlashCommand } from '../../interfaces';
 
 export const slashPluginKey = new PluginKey<SlashPluginState>('slash');
 
-// Define all available slash commands
+// Define all available slash commands - simplified to essential elements only
 const slashCommands: SlashCommand[] = [
-  // Text formatting
+  // Headings
   {
     id: 'heading1',
     title: 'Heading 1',
     description: 'Large section heading',
-    icon: 'H1',
-    category: 'text',
+    icon: '<i class="fa-regular fa-h1"></i>',
+    category: 'headings',
     action: 'heading1',
-    keywords: ['h1', 'heading', 'title', 'large']
+    keywords: ['h1', 'heading', 'title', 'large'],
+    shortcut: '⌘⌥1'
   },
   {
     id: 'heading2',
     title: 'Heading 2',
     description: 'Medium section heading',
-    icon: 'H2',
-    category: 'text',
+    icon: '<i class="fa-regular fa-h2"></i>',
+    category: 'headings',
     action: 'heading2',
-    keywords: ['h2', 'heading', 'subtitle', 'medium']
+    keywords: ['h2', 'heading', 'subtitle', 'medium'],
+    shortcut: '⌘⌥2'
   },
   {
     id: 'heading3',
     title: 'Heading 3',
     description: 'Small section heading',
-    icon: 'H3',
-    category: 'text',
+    icon: '<i class="fa-regular fa-h3"></i>',
+    category: 'headings',
     action: 'heading3',
-    keywords: ['h3', 'heading', 'small']
+    keywords: ['h3', 'heading', 'small'],
+    shortcut: '⌘⌥3'
   },
-  {
-    id: 'paragraph',
-    title: 'Paragraph',
-    description: 'Just start writing with plain text',
-    icon: 'P',
-    category: 'text',
-    action: 'paragraph',
-    keywords: ['text', 'normal', 'paragraph']
-  },
+
+  // Lists
   {
     id: 'bullet-list',
     title: 'Bullet List',
     description: 'Create a simple bullet list',
-    icon: '•',
-    category: 'text',
+    icon: '<i class="fa-regular fa-list-ul"></i>',
+    category: 'lists',
     action: 'bullet-list',
     keywords: ['bullet', 'list', 'ul', 'unordered']
   },
@@ -57,8 +53,8 @@ const slashCommands: SlashCommand[] = [
     id: 'numbered-list',
     title: 'Numbered List',
     description: 'Create a list with numbering',
-    icon: '1.',
-    category: 'text',
+    icon: '<i class="fa-regular fa-list-ol"></i>',
+    category: 'lists',
     action: 'numbered-list',
     keywords: ['numbered', 'list', 'ol', 'ordered']
   },
@@ -66,17 +62,30 @@ const slashCommands: SlashCommand[] = [
     id: 'todo-list',
     title: 'Todo List',
     description: 'Track tasks with a to-do list',
-    icon: '☐',
-    category: 'text',
+    icon: '<i class="fa-regular fa-list-check"></i>',
+    category: 'lists',
     action: 'todo-list',
     keywords: ['todo', 'task', 'checkbox', 'checklist']
   },
+
+  // Media
+  {
+    id: 'media',
+    title: 'Media',
+    description: 'Insert media content',
+    icon: '<svg width="12" height="12" viewBox="0 0 46 46" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M37.2798 0.319824H8.71982C4.08982 0.319824 0.319824 4.07982 0.319824 8.71982V37.2798C0.319824 41.9098 4.08982 45.6798 8.71982 45.6798H37.2798C41.9098 45.6798 45.6798 41.9098 45.6798 37.2798V8.71982C45.6798 4.08982 41.9198 0.319824 37.2798 0.319824ZM43.1598 37.2798C43.1598 40.5198 40.5198 43.1598 37.2798 43.1598H8.71982C5.47982 43.1598 2.83982 40.5198 2.83982 37.2798V35.7498L14.2498 25.3498C14.4498 25.1698 14.7498 25.1698 14.9598 25.3498L22.2598 32.0498C22.8698 32.6098 23.6598 32.9098 24.4898 32.8498C25.3098 32.7998 26.0698 32.4298 26.6098 31.7998L34.7898 22.3298C34.9198 22.1898 35.0798 22.1498 35.1698 22.1498C35.2498 22.1498 35.4098 22.1498 35.5598 22.2898L43.1798 29.5298L43.1598 37.2798ZM43.1598 26.1898L37.3198 20.4998C36.7198 19.9098 35.8898 19.5998 35.0698 19.6398C34.2298 19.6698 33.4398 20.0598 32.8998 20.6898L24.7198 30.1598C24.5898 30.2998 24.4298 30.3398 24.3498 30.3398C24.2698 30.3398 24.1098 30.3398 23.9598 30.1998L16.6598 23.4998C15.4898 22.4298 13.7198 22.4298 12.5498 23.4998L2.83982 32.3498V8.71982C2.83982 5.47982 5.47982 2.83982 8.71982 2.83982H37.2798C40.5198 2.83982 43.1598 5.47982 43.1598 8.71982V26.1898Z"/></svg>',
+    category: 'media',
+    action: 'media',
+    keywords: ['media', 'image', 'video', 'file', 'upload']
+  },
+
+  // Blocks
   {
     id: 'code-block',
     title: 'Code Block',
     description: 'Display code with syntax highlighting',
-    icon: '</>',
-    category: 'text',
+    icon: '<i class="fa-regular fa-code"></i>',
+    category: 'blocks',
     action: 'code-block',
     keywords: ['code', 'syntax', 'programming', 'highlight']
   },
@@ -84,8 +93,8 @@ const slashCommands: SlashCommand[] = [
     id: 'quote',
     title: 'Quote',
     description: 'Capture a quote',
-    icon: '"',
-    category: 'text',
+    icon: '<i class="fa-regular fa-quote-left"></i>',
+    category: 'blocks',
     action: 'quote',
     keywords: ['quote', 'citation', 'blockquote']
   },
@@ -93,8 +102,8 @@ const slashCommands: SlashCommand[] = [
     id: 'divider',
     title: 'Divider',
     description: 'Visually divide blocks',
-    icon: '—',
-    category: 'layout',
+    icon: '<i class="fa-regular fa-minus"></i>',
+    category: 'blocks',
     action: 'divider',
     keywords: ['divider', 'line', 'separator', 'hr']
   }
@@ -240,6 +249,13 @@ function insertSlashCommand(view: EditorView, command: SlashCommand, range: { fr
           tr = tr.insert(insertPos, quoteNode);
           tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
           break;
+        case 'media':
+          // For media, just insert a paragraph for now
+          // The actual media handling would be implemented separately
+          const mediaNode = schema.nodes['paragraph'].create();
+          tr = tr.insert(insertPos, mediaNode);
+          tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + mediaNode.nodeSize - 1));
+          break;
         default:
           const defaultNode = schema.nodes['paragraph'].create();
           tr = tr.insert(insertPos, defaultNode);
@@ -319,6 +335,13 @@ function insertSlashCommand(view: EditorView, command: SlashCommand, range: { fr
           tr = tr.insert(insertPos, quoteNode2);
           tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
           break;
+        case 'media':
+          // For media, just insert a paragraph for now
+          // The actual media handling would be implemented separately
+          const mediaNode2 = schema.nodes['paragraph'].create();
+          tr = tr.insert(insertPos, mediaNode2);
+          tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + mediaNode2.nodeSize - 1));
+          break;
         default:
           const defaultNode = schema.nodes['paragraph'].create();
           tr = tr.insert(insertPos, defaultNode);
@@ -374,26 +397,25 @@ export function slashPlugin() {
     }, {} as Record<string, SlashCommand[]>);
 
     suggestionElement.innerHTML = Object.entries(groupedSuggestions)
-      .map(([category, commands]) => {
-        const categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
-        return `
-          <div class="slash__category">
-            <div class="slash__category__title">${categoryTitle}</div>
-            ${commands.map((command, i) => {
-              const globalIndex = suggestions.indexOf(command);
-              return `
-                <div class="slash__suggestion ${globalIndex === index ? 'slash__suggestion__active' : ''}" 
-                     data-index="${globalIndex}">
-                  <div class="slash__suggestion__icon">${command.icon}</div>
-                  <div class="slash__suggestion__content">
-                    <div class="slash__suggestion__title">${command.title}</div>
-                    <div class="slash__suggestion__description">${command.description}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
+      .map(([category, commands], categoryIndex) => {
+        return commands.map((command, i) => {
+          const globalIndex = suggestions.indexOf(command);
+          const isFirstInCategory = i === 0;
+          const isFirstCategory = categoryIndex === 0;
+          const showSeparator = isFirstInCategory && !isFirstCategory;
+          
+          return `
+            ${showSeparator ? '<div class="slash__separator"></div>' : ''}
+            <div class="slash__suggestion ${globalIndex === index ? 'slash__suggestion__active' : ''}" 
+                 data-index="${globalIndex}">
+              <div class="slash__suggestion__icon">${command.icon}</div>
+              <div class="slash__suggestion__content">
+                <div class="slash__suggestion__title">${command.title}</div>
+              </div>
+              ${command.shortcut ? `<div class="slash__suggestion__shortcut">${command.shortcut}</div>` : ''}
+            </div>
+          `;
+        }).join('');
       }).join('');
 
     const slashStartPos = state.range.from;

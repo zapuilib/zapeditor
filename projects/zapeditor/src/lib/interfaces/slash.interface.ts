@@ -3,9 +3,10 @@ export interface SlashCommand {
   title: string;
   description: string;
   icon: string;
-  category: 'text' | 'media' | 'layout' | 'advanced';
+  category: 'headings' | 'lists' | 'blocks' | 'media';
   action: string;
   keywords?: string[];
+  shortcut?: string;
 }
 
 export interface SlashPluginState {
