@@ -1,7 +1,7 @@
 import { Directive } from '@angular/core';
 import { MarkSpec, Schema } from 'prosemirror-model';
 import { EditorView } from 'prosemirror-view';
-import { autoLinkPlugin, linkHoverPlugin, placeholderPlugin, codeMirrorPlugin, addSurrounding, markdownPlugin, mentionPlugin, triggerMention, createTodoListPlugin, createTodoInputRulesPlugin, createTodoKeymapPlugin, slashPlugin } from '../plugins';
+import { autoLinkPlugin, linkHoverPlugin, placeholderPlugin, codeMirrorPlugin, addSurrounding, markdownPlugin, mentionPlugin, triggerMention, createTodoListPlugin, createTodoInputRulesPlugin, createTodoKeymapPlugin, slashPlugin, mediaPlugin } from '../plugins';
 import { MentionUser } from '../interfaces';
 import { redo, undo } from 'prosemirror-history';
 import { history } from 'prosemirror-history';
@@ -256,6 +256,47 @@ export class BaseEditor {
           ];
         },
       },
+      media: {
+        group: 'block',
+        content: '',
+        selectable: true,
+        atom: true,
+        attrs: {
+          src: { default: '' },
+          alt: { default: '' },
+          type: { default: 'image' },
+          uploading: { default: false },
+          width: { default: null },
+          height: { default: null }
+        },
+        parseDOM: [
+          {
+            tag: 'div[data-media]',
+            getAttrs: (dom: any) => ({
+              src: dom.getAttribute('data-src') || '',
+              alt: dom.getAttribute('data-alt') || '',
+              type: dom.getAttribute('data-type') || 'image',
+              uploading: dom.getAttribute('data-uploading') === 'true',
+              width: dom.getAttribute('data-width') ? parseInt(dom.getAttribute('data-width')) : null,
+              height: dom.getAttribute('data-height') ? parseInt(dom.getAttribute('data-height')) : null
+            })
+          }
+        ],
+        toDOM(node) {
+          return [
+            'div',
+            {
+              'data-media': 'true',
+              'data-src': node.attrs['src'],
+              'data-alt': node.attrs['alt'],
+              'data-type': node.attrs['type'],
+              'data-uploading': node.attrs['uploading'],
+              'data-width': node.attrs['width'],
+              'data-height': node.attrs['height']
+            }
+          ] as any;
+        }
+      },
     },
     marks: {
       bold: {
@@ -362,6 +403,7 @@ export class BaseEditor {
           onMentionSearch: this.onMentionSearch
         }),
         slashPlugin(),
+        mediaPlugin(),
         createTodoListPlugin(),
         createTodoInputRulesPlugin(this.schema),
         createTodoKeymapPlugin(this.schema, this.editorView),

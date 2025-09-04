@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ViewChild } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
-import { ZapEditor, MentionUser } from 'zapeditor';
+import { ZapEditor, MentionUser, MediaUploadEvent } from 'zapeditor';
+import { UploadService, UploadResponse } from './services/upload.service';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +11,11 @@ import { ZapEditor, MentionUser } from 'zapeditor';
 })
 export class AppComponent {
   title = 'demo';
+  
+  @ViewChild('defaultEditor') defaultEditor!: ZapEditor;
+  @ViewChild('inlineEditor') inlineEditor!: ZapEditor;
+  
+  constructor(private uploadService: UploadService) {}
 
   // Mock users for mention functionality
   users = signal<MentionUser[]>([
@@ -80,5 +86,27 @@ export class AppComponent {
     if (!bikasExists) {
       this.users.set([...currentUsers, bikasUser]);
     }
+  }
+
+  onMediaUpload(event: MediaUploadEvent) {
+    console.log('Media upload started:', event);
+    
+    // Simulate real upload process
+    this.uploadService.uploadFile(event.file).subscribe({
+      next: (response: UploadResponse) => {
+        console.log('Upload completed:', response);
+        
+        // Update both editors with the real uploaded URL
+        if (this.defaultEditor) {
+          this.defaultEditor.updateMediaWithUploadedUrl(response.url);
+        }
+        if (this.inlineEditor) {
+          this.inlineEditor.updateMediaWithUploadedUrl(response.url);
+        }
+      },
+      error: (error) => {
+        console.error('Upload failed:', error);
+      }
+    });
   }
 }

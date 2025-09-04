@@ -20,6 +20,12 @@ import { wrapInList, liftListItem } from 'prosemirror-schema-list';
 import { TextSelection } from 'prosemirror-state';
 
 import { HubEditorToolbar, InlineToolbarComponent } from '../components';
+
+export interface MediaUploadEvent {
+  file: File;
+  type: 'image' | 'video';
+  url: string;
+}
 import { BaseEditor } from './hub-editor.directives';
 import { MentionUser } from '../interfaces';
 
@@ -47,7 +53,8 @@ import { MentionUser } from '../interfaces';
         (codeBlock)="onCodeBlock()"
         (color)="onColor($event)"
         (at)="onAt()"
-        (block)="onBlock($event)"></hub-editor-toolbar>
+        (block)="onBlock($event)"
+        (file)="onFileUpload($event)"></hub-editor-toolbar>
     }
     <div #editor class="wysiwyg__editor"></div>
     
@@ -81,6 +88,8 @@ import { MentionUser } from '../interfaces';
         (blockStyle)="onBlockStyle($event)"
         (textFormatting)="onTextFormatting($event)"></inline-toolbar>
     }
+    
+
   </div>`,
   styleUrl: './hub-editor.component.scss',
 })
@@ -89,6 +98,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   toolbar = input<'inline' | 'default'>('default');
   usersInput = model<MentionUser[]>([]);
   mentionSearch = output<string>();
+  mediaUpload = output<MediaUploadEvent>();
   protected readonly platformId = inject(PLATFORM_ID);
   protected readonly cdr = inject(ChangeDetectorRef);
   href = signal<string>('');
@@ -98,6 +108,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   // Inline toolbar state
   showInlineToolbar = signal<boolean>(false);
   inlineToolbarPosition = signal<{ x: number; y: number; position?: 'top' | 'bottom' }>({ x: 0, y: 0, position: 'top' });
+  
+
 
   constructor() {
     super();
@@ -1146,4 +1158,188 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     this.editorView.dispatch(tr);
     this.editorView.focus();
   }
+
+  onFileUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'video/mp4',
+      'video/quicktime',
+      'video/webm'
+    ];
+    
+    if (!validTypes.includes(file.type)) {
+      alert('Please select a valid image or video file');
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
+      return;
+    }
+
+    // Insert media node into editor
+    this.insertMediaNode(file);
+  }
+
+  private async insertMediaNode(file: File) {
+    if (!this.editorView) return;
+
+    const { state } = this.editorView;
+    const { from } = state.selection;
+    
+    // Determine media type
+    const type = file.type.startsWith('image/') ? 'image' : 'video';
+    
+    // Create object URL for preview
+    const url = URL.createObjectURL(file);
+    
+    // Calculate smart dimensions for the image
+    const { width, height } = await this.calculateSmartDimensions(file, type, url);
+    
+    // Create media node with uploading state
+    const mediaNode = state.schema.nodes['media'].create({
+      src: url,
+      alt: file.name,
+      type: type,
+      uploading: true,
+      width: width,
+      height: height
+    });
+
+    // Insert the media node
+    const tr = state.tr.insert(from, mediaNode);
+    this.editorView.dispatch(tr);
+    
+    // Simulate upload progress
+    this.simulateMediaUpload(file, url, type, width, height);
+  }
+
+  private calculateSmartDimensions(file: File, type: 'image' | 'video', url: string): Promise<{ width: number; height: number }> {
+    return new Promise((resolve) => {
+      if (type === 'image') {
+        const img = new Image();
+        
+        img.onload = () => {
+          const maxWidth = 800; // Max width of editor
+          const maxHeight = 600; // Max height of editor
+          
+          let width = img.naturalWidth;
+          let height = img.naturalHeight;
+          
+          // If image is smaller than max dimensions, use actual size
+          if (width <= maxWidth && height <= maxHeight) {
+            // Use actual dimensions for small images
+            resolve({ width, height });
+          } else {
+            // For large images, scale down to fit within max dimensions
+            const aspectRatio = width / height;
+            
+            if (width > maxWidth) {
+              width = maxWidth;
+              height = width / aspectRatio;
+            }
+            
+            if (height > maxHeight) {
+              height = maxHeight;
+              width = height * aspectRatio;
+            }
+            
+            resolve({ width, height });
+          }
+        };
+        
+        img.onerror = () => {
+          // Fallback to max dimensions if image fails to load
+          resolve({ width: 800, height: 600 });
+        };
+        
+        img.src = url;
+      } else if (type === 'video') {
+        // For videos, use a reasonable default size
+        resolve({ width: 600, height: 400 });
+      } else {
+        // Fallback
+        resolve({ width: 300, height: 200 });
+      }
+    });
+  }
+
+  private calculateMediaDimensions(file: File, type: 'image' | 'video'): { width: number; height: number } {
+    // Default dimensions - this method is kept for backward compatibility
+    let width = 300;
+    let height = 200;
+    
+    if (type === 'image') {
+      const maxWidth = 800;
+      const maxHeight = 600;
+      width = maxWidth;
+      height = maxHeight;
+    } else if (type === 'video') {
+      width = 600;
+      height = 400;
+    }
+    
+    return { width, height };
+  }
+
+  private simulateMediaUpload(file: File, url: string, type: 'image' | 'video', width: number, height: number) {
+    // Don't complete upload immediately - wait for parent to call updateMediaWithUploadedUrl
+    // The media node will stay in uploading state until the real URL is provided
+    // Just emit the upload event to parent
+    this.mediaUpload.emit({
+      file,
+      type: type,
+      url: url
+    });
+  }
+
+
+  /**
+   * Updates the media node with the real uploaded URL
+   * This method is called by the parent component after upload completes
+   */
+  public updateMediaWithUploadedUrl(uploadedUrl: string) {
+    if (!this.editorView) return;
+
+    const { state } = this.editorView;
+    
+    // Find the media node that needs to be updated (the one in uploading state)
+    let mediaPos = -1;
+    state.doc.descendants((node, pos) => {
+      if (node.type.name === 'media' && node.attrs['uploading'] === true) {
+        mediaPos = pos;
+        return false; // Stop searching
+      }
+      return true; // Continue searching
+    });
+
+    if (mediaPos !== -1) {
+      const tr = state.tr.setNodeMarkup(mediaPos, undefined, {
+        ...state.doc.nodeAt(mediaPos)?.attrs,
+        src: uploadedUrl, // Update with real uploaded URL
+        uploading: false  // Mark as completed
+      });
+      this.editorView.dispatch(tr);
+    }
+  }
+
+  private generateRealImageUrl(file: File, width: number, height: number): string {
+    // Generate a real image URL using picsum.photos
+    const imageWidth = Math.floor(width);
+    const imageHeight = Math.floor(height);
+    return `https://picsum.photos/${imageWidth}/${imageHeight}?random=${Date.now()}`;
+  }
+
+
 }

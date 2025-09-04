@@ -1,0 +1,93 @@
+// Media Plugin Styles
+.media__node {
+  @apply relative block mx-auto overflow-visible cursor-pointer max-w-max text-center;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.media__container {
+  @apply relative rounded-lg mx-auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.media__upload__spinner {
+  @apply w-10 h-10 rounded-full animate-spin z-[1];
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+}
+
+.media__resize__handle {
+  @apply absolute top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded cursor-w-resize opacity-0 transition-opacity duration-200 z-20;
+
+  &:hover {
+    @apply bg-blue-700;
+  }
+
+  &--left {
+    @apply left-2 cursor-w-resize;
+  }
+
+  &--right {
+    @apply right-2 cursor-e-resize;
+  }
+}
+
+.media__toolbar {
+  @apply absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity duration-200 bg-zinc-900 px-2 py-1 rounded border border-zinc-400/10;
+
+  button {
+    @apply p-1  text-white border-0 rounded cursor-pointer flex items-center justify-center text-xs hover:bg-zinc-400/10;
+  }
+}
+
+.media__uploading__container {
+  @apply relative bg-gray-50 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg max-w-full mx-auto;
+}
+
+.media__uploading__bg {
+  @apply absolute inset-0 bg-cover bg-center blur-sm opacity-30;
+}
+
+.media__uploaded__container {
+  @apply relative rounded-lg overflow-hidden block mx-auto;
+}
+
+.media__uploaded__img,
+.media__uploaded__video {
+  @apply w-full h-full object-contain block;
+}
+
+.media__placeholder {
+  @apply bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 text-sm;
+}
+
+// Preview modal styles
+.media__preview__modal {
+  @apply fixed inset-0 bg-zinc-950/90 z-[9999] cursor-pointer;
+}
+
+.media__preview__content {
+  @apply  h-full w-full cursor-default bg-zinc-950 rounded-lg overflow-hidden;
+}
+
+.media__preview__header {
+  @apply absolute top-0 right-0 z-[10000] flex gap-0 p-2;
+}
+
+.media__preview__close,
+.media__preview__download {
+  @apply  p-1.5 text-sm text-zinc-200 border-0 rounded cursor-pointer flex items-center justify-center  hover:bg-zinc-400/10 transition-colors;
+}
+
+.media__preview__media {
+  @apply w-full h-full flex items-center justify-center;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

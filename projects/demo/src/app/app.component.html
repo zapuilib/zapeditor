@@ -2,8 +2,10 @@
   <div class="demo__section">
     <h2>Default Toolbar</h2>
     <zap-editor 
+      #defaultEditor
       [usersInput]="users()" 
-      (mentionSearch)="onMentionSearch($event)">
+      (mentionSearch)="onMentionSearch($event)"
+      (mediaUpload)="onMediaUpload($event)">
     </zap-editor>
   </div>
   
@@ -11,9 +13,11 @@
     <h2>Inline Toolbar</h2>
     <p class="demo__hint">Select text to see the floating toolbar</p>
     <zap-editor 
+      #inlineEditor
       toolbar="inline"
       [usersInput]="users()" 
-      (mentionSearch)="onMentionSearch($event)">
+      (mentionSearch)="onMentionSearch($event)"
+      (mediaUpload)="onMediaUpload($event)">
     </zap-editor>
   </div>
 </div>
