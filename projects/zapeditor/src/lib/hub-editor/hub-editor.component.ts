@@ -425,39 +425,69 @@ export class ZapEditor extends BaseEditor implements AfterViewInit, OnDestroy {
         }
       }
       
-      // Toolbar dimensions (approximate)
-      const toolbarWidth = 300; // Approximate width
-      const toolbarHeight = 40; // Approximate height
-      const offset = 1; // Distance from selection - very close positioning
+      // Get actual toolbar dimensions from DOM
+      const toolbarElement = document.querySelector('.inline__toolbar__content') as HTMLElement;
+      let toolbarWidth = 300; // fallback
+      let toolbarHeight = 40; // fallback
+      
+      if (toolbarElement) {
+        const rect = toolbarElement.getBoundingClientRect();
+        toolbarWidth = rect.width;
+        toolbarHeight = rect.height;
+      }
+      
+      const offset = 2; // Reduced gap between toolbar and cursor
+      const minLeftOffset = 50; // Minimum 50px from left edge
+      const isMobile = window.innerWidth <= 768;
       
       let x = selectionCenterX;
       let y = selectionTop;
-      let position: 'top' | 'bottom' = 'top'; // Default position
+      let position: 'top' | 'bottom' = 'top';
       
-      // Always position on top - no exceptions, with additional 100px offset
+      // Position on top of cursor with minimal gap
       y = selectionTop - toolbarHeight - offset + 40;
       position = 'top';
       
-      // Adjust horizontal positioning based on text alignment
-      if (textAlign === 'center') {
-        // Center the toolbar
-        if (x - toolbarWidth / 2 < editorRect.left) {
-          x = editorRect.left + toolbarWidth / 2 + offset;
-        } else if (x + toolbarWidth / 2 > editorRect.right) {
-          x = editorRect.right - toolbarWidth / 2 - offset;
-        }
-      } else if (textAlign === 'right') {
-        // Align toolbar to the right
-        x = Math.min(x, editorRect.right - toolbarWidth / 2 - offset);
-        if (x - toolbarWidth / 2 < editorRect.left) {
-          x = editorRect.left + toolbarWidth / 2 + offset;
+      if (isMobile) {
+        // On mobile: position toolbar as if cursor is at the beginning of the line
+        // Get the coordinates of the start of the current line
+        const lineStart = $from.start();
+        const lineStartCoords = this.editorView.coordsAtPos(lineStart);
+        x = lineStartCoords.left; // Use the left edge of the line
+        
+        // Apply offset logic to prevent cutoff
+        const minX = minLeftOffset + toolbarWidth / 2;
+        const maxX = window.innerWidth - minLeftOffset - toolbarWidth / 2;
+        
+        // Adjust position to fit within bounds
+        if (x < minX) {
+          x = minX;
+        } else if (x > maxX) {
+          x = maxX;
         }
       } else {
-        // left or justify - align toolbar to the left
-        x = Math.max(x, editorRect.left + toolbarWidth / 2 + offset);
-        if (x + toolbarWidth / 2 > editorRect.right) {
-          x = editorRect.right - toolbarWidth / 2 - offset;
+        // On desktop: center toolbar relative to cursor
+        const minX = minLeftOffset + toolbarWidth / 2;
+        const maxX = window.innerWidth - minLeftOffset - toolbarWidth / 2;
+        
+        // Position toolbar relative to cursor, but keep within bounds
+        if (x < minX) {
+          x = minX;
+        } else if (x > maxX) {
+          x = maxX;
         }
+      }
+      
+      // If toolbar would go above viewport, position below cursor
+      if (y < 20) {
+        y = selectionBottom + offset;
+        position = 'bottom';
+      }
+      
+      // If toolbar would go below viewport, position above cursor
+      if (y + toolbarHeight > window.innerHeight - 20) {
+        y = selectionTop - toolbarHeight - offset;
+        position = 'top';
       }
       
       this.inlineToolbarPosition.set({ x, y, position });
