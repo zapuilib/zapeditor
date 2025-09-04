@@ -375,7 +375,7 @@ export class AppComponent {
         
         {
           type: 'code_block',
-          attrs: { language: 'typescript', wrapped: false },
+          attrs: { language: 'ts', wrapped: false },
           content: [
             { type: 'text', text: 'function greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconst user = "World";\ngreet(user);' }
           ]

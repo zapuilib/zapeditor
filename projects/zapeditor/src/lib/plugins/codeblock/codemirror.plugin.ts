@@ -211,6 +211,7 @@ class CodeBlockView {
     this.cm.dom.addEventListener('click', () => {
       this.cm.focus();
     });
+    
   }
 
   private createLanguageSelector(toolbarContent: HTMLElement) {
@@ -614,6 +615,7 @@ class CodeBlockView {
           },
         });
         this.updating = false;
+        
       }
       return true;
     } catch (error) {
