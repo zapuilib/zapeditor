@@ -2,6 +2,7 @@ import { Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
 import { MentionPluginState, MentionUser } from '../../interfaces';
+import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
 export const mentionPluginKey = new PluginKey<MentionPluginState>('mention');
 
@@ -146,8 +147,25 @@ export function mentionPlugin(options: MentionPluginOptions) {
 
     const mentionCoords = view.coordsAtPos(mentionStartPos);
 
-    suggestionElement.style.left = `${mentionCoords.left}px`;
-    suggestionElement.style.top = `${mentionCoords.bottom + 5}px`;
+    // Use smart positioning
+    const triggerRect = {
+      left: mentionCoords.left,
+      top: mentionCoords.top,
+      right: mentionCoords.right,
+      bottom: mentionCoords.bottom,
+      width: mentionCoords.right - mentionCoords.left,
+      height: mentionCoords.bottom - mentionCoords.top
+    } as DOMRect;
+
+    const position = calculateSmartPosition(
+      triggerRect,
+      suggestionElement,
+      'bottom',
+      5
+    );
+
+    suggestionElement.style.left = `${position.x}px`;
+    suggestionElement.style.top = `${position.y}px`;
     suggestionElement.style.display = 'block';
 
     // Add click outside handler

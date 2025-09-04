@@ -11,7 +11,7 @@ import { UploadService, UploadResponse } from './services/upload.service';
 })
 export class AppComponent {
   title = 'demo';
-  
+  toolbar = signal<'inline' | 'default'>('default');
   @ViewChild('defaultEditor') defaultEditor!: ZapEditor;
   @ViewChild('inlineEditor') inlineEditor!: ZapEditor;
   

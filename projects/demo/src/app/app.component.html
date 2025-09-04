@@ -1,23 +1,17 @@
 <div class="demo__container">
   <div class="demo__section">
-    <h2>Default Toolbar</h2>
-    <zap-editor 
+    <h2>Zap text editor</h2>
+    <div class="btn-grp">
+      <button [class.active]="toolbar() === 'inline'"  (click)="toolbar.set('inline')">Inline</button>
+      <button [class.active]="toolbar() === 'default'" (click)="toolbar.set('default')">Top</button>
+    </div>
+    <zap-editor
       #defaultEditor
-      [usersInput]="users()" 
+      [toolbar]="toolbar()"
+      [usersInput]="users()"
       (mentionSearch)="onMentionSearch($event)"
-      (mediaUpload)="onMediaUpload($event)">
-    </zap-editor>
-  </div>
-  
-  <div class="demo__section">
-    <h2>Inline Toolbar</h2>
-    <p class="demo__hint">Select text to see the floating toolbar</p>
-    <zap-editor 
-      #inlineEditor
-      toolbar="inline"
-      [usersInput]="users()" 
-      (mentionSearch)="onMentionSearch($event)"
-      (mediaUpload)="onMediaUpload($event)">
+      (mediaUpload)="onMediaUpload($event)"
+    >
     </zap-editor>
   </div>
 </div>

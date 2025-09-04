@@ -1,0 +1,94 @@
+import { SlashCommand } from '../interfaces';
+
+export const SLASH_COMMANDS: SlashCommand[] = [
+  // Headings
+  {
+    id: 'heading1',
+    title: 'Heading 1',
+    icon: 'h1',
+    category: 'headings',
+    action: 'heading1',
+    keywords: ['h1', 'heading', 'title', 'large'],
+    shortcut: '⌘⌥1',
+  },
+  {
+    id: 'heading2',
+    title: 'Heading 2',
+    icon: 'h2',
+    category: 'headings',
+    action: 'heading2',
+    keywords: ['h2', 'heading', 'subtitle', 'medium'],
+    shortcut: '⌘⌥2',
+  },
+  {
+    id: 'heading3',
+    title: 'Heading 3',
+    icon: 'h3',
+    category: 'headings',
+    action: 'heading3',
+    keywords: ['h3', 'heading', 'small'],
+    shortcut: '⌘⌥3',
+  },
+
+  // Lists
+  {
+    id: 'bullet-list',
+    title: 'Bullet List',
+    icon: 'list-ul',
+    category: 'lists',
+    action: 'bullet-list',
+    keywords: ['bullet', 'list', 'ul', 'unordered'],
+  },
+  {
+    id: 'numbered-list',
+    title: 'Numbered List',
+    icon: 'list-ol',
+    category: 'lists',
+    action: 'numbered-list',
+    keywords: ['numbered', 'list', 'ol', 'ordered'],
+  },
+  {
+    id: 'todo-list',
+    title: 'Todo List',
+    icon: 'list-check',
+    category: 'lists',
+    action: 'todo-list',
+    keywords: ['todo', 'task', 'checkbox', 'checklist'],
+  },
+
+  // Media
+  {
+    id: 'media',
+    title: 'Media',
+    icon: 'media',
+    category: 'media',
+    action: 'media',
+    keywords: ['media', 'image', 'video', 'file', 'upload'],
+  },
+
+  // Blocks
+  {
+    id: 'code-block',
+    title: 'Code Block',
+    icon: 'code',
+    category: 'blocks',
+    action: 'code-block',
+    keywords: ['code', 'syntax', 'programming', 'highlight'],
+  },
+  {
+    id: 'quote',
+    title: 'Quote',
+    icon: 'quote-left',
+    category: 'blocks',
+    action: 'quote',
+    keywords: ['quote', 'citation', 'blockquote'],
+  },
+  {
+    id: 'divider',
+    title: 'Divider',
+    icon: 'minus',
+    category: 'blocks',
+    action: 'divider',
+    keywords: ['divider', 'line', 'separator', 'hr'],
+  },
+];

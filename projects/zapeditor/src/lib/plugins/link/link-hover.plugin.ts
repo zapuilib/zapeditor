@@ -1,5 +1,6 @@
 import { Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
+import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
 /**
  * This plugin creates a hovercard that appears when the user cursor is over a link.
@@ -280,22 +281,35 @@ export function linkHoverPlugin() {
     }
     
     const linkElement = findLinkElement(view, pos);
+    let triggerRect: DOMRect;
+    
     if (linkElement) {
-      const rect = linkElement.getBoundingClientRect();
-      
-      hovercard.style.position = 'absolute';
-      hovercard.style.left = `${rect.left}px`;
-      hovercard.style.top = `${rect.bottom + 5}px`;
-      hovercard.style.display = 'flex';
-      hovercard.style.zIndex = '99';
+      triggerRect = linkElement.getBoundingClientRect();
     } else {
-      const rect = view.coordsAtPos(pos);
-      hovercard.style.position = 'absolute';
-      hovercard.style.left = `${rect.left}px`;
-      hovercard.style.top = `${rect.bottom + 5}px`;
-      hovercard.style.display = 'flex';
-      hovercard.style.zIndex = '99';
+      const coords = view.coordsAtPos(pos);
+      triggerRect = {
+        left: coords.left,
+        top: coords.top,
+        right: coords.right,
+        bottom: coords.bottom,
+        width: coords.right - coords.left,
+        height: coords.bottom - coords.top
+      } as DOMRect;
     }
+    
+    // Use smart positioning
+    const position = calculateSmartPosition(
+      triggerRect,
+      hovercard,
+      'bottom',
+      5
+    );
+    
+    hovercard.style.position = 'absolute';
+    hovercard.style.left = `${position.x}px`;
+    hovercard.style.top = `${position.y}px`;
+    hovercard.style.display = 'flex';
+    hovercard.style.zIndex = '99';
     
     if (!hovercard.parentNode) {
       document.body.appendChild(hovercard);

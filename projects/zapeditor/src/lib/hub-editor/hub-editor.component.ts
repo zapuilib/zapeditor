@@ -20,6 +20,7 @@ import { wrapInList, liftListItem } from 'prosemirror-schema-list';
 import { TextSelection } from 'prosemirror-state';
 
 import { HubEditorToolbar, InlineToolbarComponent } from '../components';
+import { calculateSmartPosition } from '../utils/smart-positioning.util';
 
 export interface MediaUploadEvent {
   file: File;
@@ -124,11 +125,13 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     };
   }
 
+
   ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.initializeEditor();
     this.setupInlineToolbarEvents();
     this.setupSlashMediaUpload();
+    this.setupDragAndDrop();
   }
 
   private initializeEditor() {
@@ -193,6 +196,77 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         this.insertMediaNode(file);
       }
     });
+  }
+
+  private setupDragAndDrop() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    const editorElement = this.editor?.nativeElement;
+    if (!editorElement) return;
+
+    // Prevent default drag behaviors
+    editorElement.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      event.dataTransfer!.dropEffect = 'copy';
+    });
+
+    editorElement.addEventListener('dragenter', (event) => {
+      event.preventDefault();
+      editorElement.classList.add('drag-over');
+    });
+
+    editorElement.addEventListener('dragleave', (event) => {
+      event.preventDefault();
+      // Only remove class if we're leaving the editor entirely
+      if (!editorElement.contains(event.relatedTarget as Node)) {
+        editorElement.classList.remove('drag-over');
+      }
+    });
+
+    editorElement.addEventListener('drop', (event) => {
+      event.preventDefault();
+      editorElement.classList.remove('drag-over');
+      
+      const files = Array.from(event.dataTransfer?.files || []);
+      if (files.length > 0) {
+        // Handle the first file (we can extend this to handle multiple files later)
+        const file = files[0];
+        this.handleDroppedFile(file);
+      }
+    });
+  }
+
+  private handleDroppedFile(file: File) {
+    // Use the same validation and upload logic as the file input
+    const validTypes = [
+      // Images
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      // Videos
+      'video/mp4', 'video/quicktime', 'video/webm', 'video/avi', 'video/mov',
+      // Documents
+      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain', 'text/csv', 'application/rtf',
+      // Archives
+      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed', 'application/x-tar', 'application/gzip',
+      // Code files
+      'text/javascript', 'text/typescript', 'text/css', 'text/html', 'application/json', 'text/xml', 'application/xml'
+    ];
+    
+    if (!validTypes.includes(file.type)) {
+      alert('Please drop a valid media file (images, videos, documents, archives, or code files)');
+      return;
+    }
+
+    // Validate file size (50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      alert('File size must be less than 50MB');
+      return;
+    }
+
+    // Insert media node into editor
+    this.insertMediaNode(file);
   }
 
   private updateInlineToolbar() {

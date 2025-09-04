@@ -11,7 +11,7 @@ export function addSurrounding() {
       const paragraph = schema.nodes['paragraph'];
       if (!paragraph) return null;
 
-      const blockElements = ['code_block', 'horizontal_rule'];
+      const blockElements = ['code_block', 'horizontal_rule', 'media'];
       let changed = false;
 
       // Only add paragraph before if it's the very first element

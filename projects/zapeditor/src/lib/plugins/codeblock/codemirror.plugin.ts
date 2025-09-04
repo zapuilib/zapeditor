@@ -1,9 +1,11 @@
 import { Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
+import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 import {
   EditorView as CodeMirror,
   keymap as cmKeymap,
   drawSelection,
+  placeholder,
 } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
@@ -181,6 +183,8 @@ class CodeBlockView {
           }
           return null;
         }),
+        // Add placeholder for empty code blocks
+        placeholder('Start typing your code...'),
       ],
     });
 
@@ -253,21 +257,14 @@ class CodeBlockView {
       if (isVisible) {
         languageDropdown.style.display = 'none';
       } else {
-        const rect = languageSelect.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const spaceBelow = viewportHeight - rect.bottom;
-        const dropdownHeight = 200; // Approximate dropdown height
-
-        if (spaceBelow >= dropdownHeight) {
-          languageDropdown.style.bottom = 'auto';
-          languageDropdown.style.top = '100%';
-          languageDropdown.style.marginBottom = 'auto';
-        } else {
-          languageDropdown.style.top = 'auto';
-          languageDropdown.style.bottom = '100%';
-          languageDropdown.style.marginBottom = '5px';
-          languageDropdown.style.marginTop = 'auto';
-        }
+        // Position dropdown relative to the language selector within the code block
+        languageDropdown.style.position = 'absolute';
+        languageDropdown.style.left = '0';
+        languageDropdown.style.top = '100%';
+        languageDropdown.style.bottom = 'auto';
+        languageDropdown.style.marginBottom = 'auto';
+        languageDropdown.style.marginTop = '4px';
+        languageDropdown.style.zIndex = '1000';
 
         languageDropdown.style.display = 'block';
       }

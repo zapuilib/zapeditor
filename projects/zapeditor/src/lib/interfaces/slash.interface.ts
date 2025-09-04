@@ -1,7 +1,6 @@
 export interface SlashCommand {
   id: string;
   title: string;
-  description: string;
   icon: string;
   category: 'headings' | 'lists' | 'blocks' | 'media';
   action: string;
