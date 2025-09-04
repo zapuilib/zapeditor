@@ -340,8 +340,7 @@
 }
 
 .mention__suggestions {
-  @apply fixed rounded-lg border border-zinc-400/10 bg-zinc-900;
-  @apply max-h-[15rem] overflow-y-auto md:min-w-[22rem];
+  @apply absolute bg-zinc-900 border border-zinc-400/10 rounded-lg shadow-lg max-h-[700px] overflow-y-auto z-50 min-w-60 font-sans p-1;
 }
 
 .mention__suggestion {
