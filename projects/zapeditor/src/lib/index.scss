@@ -330,10 +330,12 @@
 }
 
 .mention {
-  @apply inline whitespace-nowrap rounded-full bg-indigo-700 px-1.5 py-0.5 text-xs font-medium text-zinc-200;
+  @apply inline-block whitespace-nowrap rounded-full bg-indigo-600 px-2 py-1 text-xs font-medium text-white cursor-default;
+  @apply border border-indigo-500/30 shadow-sm;
+  @apply transition-all duration-200 hover:bg-indigo-500 hover:shadow-md;
 
   &::before {
-    @apply text-zinc-200;
+    @apply text-white;
   }
 }
 

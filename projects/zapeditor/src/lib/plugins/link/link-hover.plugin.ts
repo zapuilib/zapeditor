@@ -3,177 +3,117 @@ import { EditorView } from 'prosemirror-view';
 import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
 /**
- * This plugin creates a hovercard that appears when the user cursor is over a link.
- * It allows the user to edit the link and open it in a new tab or remove the link.
+ * Link hover plugin - shows hovercard when hovering over links
  */
 export function linkHoverPlugin() {
   let hovercard: HTMLElement | null = null;
   let currentLink: HTMLAnchorElement | null = null;
   let isEditMode = false;
+  let isPositioning = false; // Prevent multiple positioning calculations
 
-  function createHoverCard() {
-    if (hovercard) return hovercard;
+  function createHoverCard(): HTMLElement {
+    const card = document.createElement('div');
+    card.className = 'prosemirror__link__card';
+    card.style.position = 'absolute';
+    card.style.zIndex = '9999';
+    card.style.display = 'none';
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-10px)';
+    card.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out';
     
-    const el = document.createElement('div');
-    el.className = 'prosemirror__link__card';
+    const content = document.createElement('div');
+    content.className = 'prosemirror__link__card__content';
+    card.appendChild(content);
     
-    const contentContainer = document.createElement('div');
-    contentContainer.className = 'prosemirror__link__card__content';
-    el.appendChild(contentContainer);
-    
-    (el as any).contentContainer = contentContainer;
-    
-    return el;
+    (card as any).content = content;
+    return card;
   }
 
-  function showEditMode() {
-    if (!hovercard) return;
+  function createNormalContent(): DocumentFragment {
+    const fragment = document.createDocumentFragment();
     
-    const contentContainer = (hovercard as any).contentContainer;
-    if (contentContainer) {
-      contentContainer.innerHTML = '';
-      
-      const editForm = createEditForm();
-      contentContainer.appendChild(editForm);
-      
-      hovercard.classList.add('prosemirror__link__card__edit');
-      isEditMode = true;
-    }
-  }
-
-  function showNormalMode() {
-    if (!hovercard) return;
-    
-    const contentContainer = (hovercard as any).contentContainer;
-    if (contentContainer) {
-      contentContainer.innerHTML = '';
-      
-      const normalContent = createNormalContent();
-      contentContainer.appendChild(normalContent);
-      
-      hovercard.classList.remove('prosemirror__link__card__edit');
-      isEditMode = false;
-    }
-  }
-
-  function createNormalContent() {
+    // Edit button
     const editBtn = document.createElement('button');
-    editBtn.innerHTML = 'Edit link';
-    editBtn.title = 'Edit link';
+    editBtn.textContent = 'Edit link';
     editBtn.className = 'prosemirror__link__card__edit__button';
-    editBtn.addEventListener('click', (e) => {
+    editBtn.onclick = (e) => {
       e.stopPropagation();
       showEditMode();
-    });
+    };
 
+    // Separator
     const separator = document.createElement('div');
     separator.className = 'prosemirror__link__card__separator';
 
-    const actionsGroup = document.createElement('div');
-    actionsGroup.className = 'prosemirror__link__card__actions';
+    // Actions container
+    const actions = document.createElement('div');
+    actions.className = 'prosemirror__link__card__actions';
 
+    // Unlink button
     const unlinkBtn = document.createElement('button');
     unlinkBtn.innerHTML = '<i class="fa-regular fa-link-slash"></i>';
     unlinkBtn.title = 'Remove link';
     unlinkBtn.className = 'prosemirror__link__card__unlink';
-    unlinkBtn.addEventListener('click', (e) => {
+    unlinkBtn.onclick = (e) => {
       e.stopPropagation();
-      if (currentLink) {
-        const view = getCurrentView();
-        if (view) {
-          const pos = view.posAtDOM(currentLink, 0);
-          if (pos !== null) {
-            const linkMark = view.state.schema.marks['link'];
-            if (linkMark) {
-              let from = pos;
-              let to = pos;
-              let foundRange = false;
-              
-              view.state.doc.descendants((node, pos) => {
-                if (foundRange) return false;
-                
-                node.marks.forEach(mark => {
-                  if (mark.type === linkMark && !foundRange) {
-                    const start = pos;
-                    const end = pos + node.nodeSize;
-                    
-                    if (pos <= from && from < end) {
-                      from = start;
-                      to = end;
-                      foundRange = true;
-                    }
-                  }
-                });
-                
-                return true;
-              });
-              
-              if (to > from) {
-                const tr = view.state.tr.removeMark(from, to, linkMark);
-                view.dispatch(tr);
-              }
-            }
-          }
-        }
-      }
-      hideHoverCard();
-    });
-
-    const iconSeparator = document.createElement('div');
-    iconSeparator.className = 'prosemirror__link__card__icon__separator';
-
+      removeLink();
+    };
+    
+    // Icon separator
+    const iconSep = document.createElement('div');
+    iconSep.className = 'prosemirror__link__card__icon__separator';
+    
+    // New tab button
     const newTabBtn = document.createElement('button');
     newTabBtn.innerHTML = '<i class="fa-regular fa-external-link-alt"></i>';
     newTabBtn.title = 'Open in new tab';
     newTabBtn.className = 'prosemirror__link__card__newtab';
-    newTabBtn.addEventListener('click', (e) => {
+    newTabBtn.onclick = (e) => {
       e.stopPropagation();
-      if (currentLink) {
-        const href = currentLink.getAttribute('href');
-        if (href) {
-          window.open(href, '_blank', 'noopener,noreferrer');
-        }
-      }
-      hideHoverCard();
-    });
-
-    const fragment = document.createDocumentFragment();
+      openInNewTab();
+    };
+    
+    actions.appendChild(unlinkBtn);
+    actions.appendChild(iconSep);
+    actions.appendChild(newTabBtn);
+    
     fragment.appendChild(editBtn);
     fragment.appendChild(separator);
-    actionsGroup.appendChild(unlinkBtn);
-    actionsGroup.appendChild(iconSeparator);
-    actionsGroup.appendChild(newTabBtn);
-    fragment.appendChild(actionsGroup);
+    fragment.appendChild(actions);
 
     return fragment;
   }
 
-  function createEditForm() {
-    const el = document.createElement('div');
-    el.className = 'prosemirror__link__card__edit__form';
+  function createEditContent(): DocumentFragment {
+    const fragment = document.createDocumentFragment();
     
+    const form = document.createElement('div');
+    form.className = 'prosemirror__link__card__edit__form';
+    
+    // URL input
     const urlGroup = document.createElement('div');
     urlGroup.className = 'prosemirror__link__card__input__group';
     
     const urlLabel = document.createElement('label');
-    urlLabel.className = 'prosemirror__link__card__input__label';
     urlLabel.textContent = 'Type or paste a link';
+    urlLabel.className = 'prosemirror__link__card__input__label';
     
-    const hrefInput = document.createElement('input');
-    hrefInput.type = 'text';
-    hrefInput.placeholder = 'https://';
-    hrefInput.className = 'prosemirror__link__card__input';
-    hrefInput.value = currentLink?.getAttribute('href') || '';
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.placeholder = 'https://';
+    urlInput.className = 'prosemirror__link__card__input';
+    urlInput.value = currentLink?.getAttribute('href') || '';
     
     urlGroup.appendChild(urlLabel);
-    urlGroup.appendChild(hrefInput);
+    urlGroup.appendChild(urlInput);
     
+    // Text input
     const textGroup = document.createElement('div');
     textGroup.className = 'prosemirror__link__card__input__group';
     
     const textLabel = document.createElement('label');
-    textLabel.className = 'prosemirror__link__card__input__label';
     textLabel.textContent = 'Display text (optional)';
+    textLabel.className = 'prosemirror__link__card__input__label';
     
     const textInput = document.createElement('input');
     textInput.type = 'text';
@@ -184,60 +124,128 @@ export function linkHoverPlugin() {
     textGroup.appendChild(textLabel);
     textGroup.appendChild(textInput);
     
+    // Buttons
     const buttonGroup = document.createElement('div');
     buttonGroup.className = 'prosemirror__link__card__button__group';
     
     const updateBtn = document.createElement('button');
-    updateBtn.innerHTML = 'Update';
+    updateBtn.textContent = 'Update';
     updateBtn.className = 'prosemirror__link__card__update';
-    updateBtn.addEventListener('click', (e) => {
+    updateBtn.onclick = (e) => {
       e.stopPropagation();
-      updateLink(hrefInput.value, textInput.value);
-    });
+      updateLink(urlInput.value, textInput.value);
+    };
     
     const cancelBtn = document.createElement('button');
-    cancelBtn.innerHTML = 'Cancel';
+    cancelBtn.textContent = 'Cancel';
     cancelBtn.className = 'prosemirror__link__card__cancel';
-    cancelBtn.addEventListener('click', (e) => {
+    cancelBtn.onclick = (e) => {
       e.stopPropagation();
       showNormalMode();
-    });
+    };
     
     buttonGroup.appendChild(updateBtn);
     buttonGroup.appendChild(cancelBtn);
     
-    el.appendChild(urlGroup);
-    el.appendChild(textGroup);
-    el.appendChild(buttonGroup);
+    form.appendChild(urlGroup);
+    form.appendChild(textGroup);
+    form.appendChild(buttonGroup);
+    fragment.appendChild(form);
     
-    return el;
+    return fragment;
   }
 
-  function updateLink(href: string, text: string) {
+  function showNormalMode(): void {
+    if (!hovercard) return;
+    
+    const content = (hovercard as any).content;
+    content.innerHTML = '';
+    content.appendChild(createNormalContent());
+    
+    hovercard.classList.remove('prosemirror__link__card__edit');
+    isEditMode = false;
+  }
+
+  function showEditMode(): void {
+    if (!hovercard) return;
+    
+    const content = (hovercard as any).content;
+    content.innerHTML = '';
+    content.appendChild(createEditContent());
+    
+    hovercard.classList.add('prosemirror__link__card__edit');
+    isEditMode = true;
+  }
+
+  function removeLink(): void {
+    if (!currentLink) return;
+    
+    const view = getCurrentView();
+    if (!view) return;
+    
+    const pos = view.posAtDOM(currentLink, 0);
+    if (pos === null) return;
+    
+    const linkMark = view.state.schema.marks['link'];
+    if (!linkMark) return;
+    
+    // Find the range of the link
+    let from = pos;
+    let to = pos;
+    
+    view.state.doc.descendants((node, nodePos) => {
+      if (nodePos < pos) return true;
+      
+      node.marks.forEach(mark => {
+        if (mark.type === linkMark) {
+          const start = nodePos;
+          const end = nodePos + node.nodeSize;
+          
+          if (pos >= start && pos < end) {
+            from = start;
+            to = end;
+          }
+        }
+      });
+      
+      return true;
+    });
+    
+    if (to > from) {
+      const tr = view.state.tr.removeMark(from, to, linkMark);
+      view.dispatch(tr);
+    }
+    
+    hideHoverCard();
+  }
+
+  function updateLink(href: string, text: string): void {
     if (!currentLink || !href) return;
     
     const view = getCurrentView();
-    if (view) {
+    if (!view) return;
+    
       const pos = view.posAtDOM(currentLink, 0);
-      if (pos !== null) {
+    if (pos === null) return;
+    
         const linkMark = view.state.schema.marks['link'];
-        if (linkMark) {
+    if (!linkMark) return;
+    
+    // Find the range of the link
           let from = pos;
           let to = pos;
-          let foundRange = false;
           
-          view.state.doc.descendants((node, pos) => {
-            if (foundRange) return false;
+    view.state.doc.descendants((node, nodePos) => {
+      if (nodePos < pos) return true;
             
             node.marks.forEach(mark => {
-              if (mark.type === linkMark && !foundRange) {
-                const start = pos;
-                const end = pos + node.nodeSize;
-                
-                if (pos <= from && from < end) {
+        if (mark.type === linkMark) {
+          const start = nodePos;
+          const end = nodePos + node.nodeSize;
+          
+          if (pos >= start && pos < end) {
                   from = start;
                   to = end;
-                  foundRange = true;
                 }
               }
             });
@@ -248,76 +256,31 @@ export function linkHoverPlugin() {
           if (to > from) {
             let tr = view.state.tr;
             
+      // Remove old link mark
             tr = tr.removeMark(from, to, linkMark);
+      
+      // Add new link mark
             tr = tr.addMark(from, to, linkMark.create({ href }));
             
+      // Update text if provided
             if (text && text !== currentLink.textContent) {
               tr = tr.replaceWith(from, to, view.state.schema.text(text, [linkMark.create({ href })]));
             }
             
             view.dispatch(tr);
           }
-        }
-      }
-    }
     
     hideHoverCard();
   }
 
-  function showHoverCard(view: EditorView, href: string, pos: number) {
-    if (!hovercard) {
-      hovercard = createHoverCard();
+  function openInNewTab(): void {
+    if (currentLink) {
+      const href = currentLink.getAttribute('href');
+      if (href) {
+        window.open(href, '_blank', 'noopener,noreferrer');
+      }
     }
-    
-    const contentContainer = (hovercard as any).contentContainer;
-    if (contentContainer) {
-      contentContainer.innerHTML = '';
-      
-      const normalContent = createNormalContent();
-      contentContainer.appendChild(normalContent);
-      
-      hovercard.classList.remove('prosemirror__link__card__edit');
-      isEditMode = false;
-    }
-    
-    const linkElement = findLinkElement(view, pos);
-    let triggerRect: DOMRect;
-    
-    if (linkElement) {
-      triggerRect = linkElement.getBoundingClientRect();
-    } else {
-      const coords = view.coordsAtPos(pos);
-      triggerRect = {
-        left: coords.left,
-        top: coords.top,
-        right: coords.right,
-        bottom: coords.bottom,
-        width: coords.right - coords.left,
-        height: coords.bottom - coords.top
-      } as DOMRect;
-    }
-    
-    // Use smart positioning
-    const position = calculateSmartPosition(
-      triggerRect,
-      hovercard,
-      'bottom',
-      5
-    );
-    
-    hovercard.style.position = 'absolute';
-    hovercard.style.left = `${position.x}px`;
-    hovercard.style.top = `${position.y}px`;
-    hovercard.style.display = 'flex';
-    hovercard.style.zIndex = '99';
-    
-    if (!hovercard.parentNode) {
-      document.body.appendChild(hovercard);
-    }
-    
-    setTimeout(() => {
-      document.addEventListener('click', handleClickOutside);
-    }, 0);
+    hideHoverCard();
   }
 
   function findLinkElement(view: EditorView, pos: number): HTMLAnchorElement | null {
@@ -336,92 +299,158 @@ export function linkHoverPlugin() {
     return null;
   }
 
-  function findLinkEndPosition(view: EditorView, startPos: number): number {
-    const { doc } = view.state;
-    const linkMark = view.state.schema.marks['link'];
-    if (!linkMark) return startPos;
+  function showHoverCard(view: EditorView, pos: number): void {
+    console.log('🚀 showHoverCard called with pos:', pos, 'isPositioning:', isPositioning);
     
-    let endPos = startPos;
+    if (isPositioning) {
+      console.log('⏸️ Already positioning, skipping...');
+      return;
+    }
     
-      doc.descendants((node, pos) => {
-      if (pos < startPos) return true;
+    if (!hovercard) {
+      hovercard = createHoverCard();
+      document.body.appendChild(hovercard);
+    }
+    
+    isPositioning = true;
+    
+    // Show normal mode first to get proper dimensions
+    showNormalMode();
+    
+    // Position the hovercard off-screen initially to get dimensions
+    hovercard.style.left = '-9999px';
+    hovercard.style.top = '-9999px';
+    hovercard.style.display = 'flex';
+    
+    // Wait for the hovercard to be rendered and get its dimensions
+    requestAnimationFrame(() => {
+      if (!hovercard) {
+        isPositioning = false;
+        return;
+      }
       
-      node.marks.forEach(mark => {
-        if (mark.type === linkMark) {
-          let currentPos = pos;
-          while (currentPos < doc.content.size) {
-            const currentNode = doc.nodeAt(currentPos);
-            if (!currentNode) break;
+      // Use double requestAnimationFrame to ensure stable coordinates
+      requestAnimationFrame(() => {
+        if (!hovercard) {
+          isPositioning = false;
+          return;
+        }
+        
+        // Use ProseMirror coordinates directly - this gives us the exact cursor position
+        const coords = view.coordsAtPos(pos);
+        console.log('🔍 ProseMirror coords:', coords);
+        
+        // Check if coordinates look stable (not at the left edge of line)
+        // If left is too small (like 57), wait for stable coordinates
+        if (coords.left < 100) {
+          console.log('⏳ Coordinates not stable yet, waiting...');
+          // Wait another frame for stable coordinates
+          requestAnimationFrame(() => {
+            if (!hovercard) {
+              isPositioning = false;
+              return;
+            }
             
-            const hasLinkMark = currentNode.marks.some(m => m.type === linkMark);
-            if (!hasLinkMark) break;
+            const stableCoords = view.coordsAtPos(pos);
+            console.log('🔍 Stable ProseMirror coords:', stableCoords);
             
-            currentPos += currentNode.nodeSize;
-          }
-          
-          if (currentPos > endPos) {
-            endPos = currentPos;
-          }
+            if (stableCoords.left < 100) {
+              console.log('⚠️ Still not stable, using current coordinates');
+            }
+            
+            positionHoverCard(stableCoords);
+          });
+        } else {
+          console.log('✅ Coordinates look stable, positioning now');
+          positionHoverCard(coords);
         }
       });
-      
-      return true;
     });
     
-    return endPos;
+    function positionHoverCard(coords: any) {
+      if (!hovercard) {
+        isPositioning = false;
+        return;
+      }
+      
+      const triggerRect = {
+        left: coords.left,
+        top: coords.top,
+        right: coords.right,
+        bottom: coords.bottom,
+        width: coords.right - coords.left,
+        height: coords.bottom - coords.top
+      } as DOMRect;
+      
+      console.log('📐 Trigger rect:', triggerRect);
+      
+      // Use smart positioning utility
+      const position = calculateSmartPosition(triggerRect, hovercard, 'bottom', 8);
+      console.log('🎯 Calculated position:', position);
+      
+      // Position the hovercard
+      hovercard.style.left = `${position.x}px`;
+      hovercard.style.top = `${position.y}px`;
+      
+      console.log('📍 Final hovercard position:', {
+        left: hovercard.style.left,
+        top: hovercard.style.top
+      });
+      
+      // Trigger slide-in animation
+      requestAnimationFrame(() => {
+        if (hovercard) {
+          hovercard.style.opacity = '1';
+          hovercard.style.transform = 'translateY(0)';
+        }
+        isPositioning = false;
+      });
+    }
+    
+    // Add click outside listener
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
   }
 
-  function handleClickOutside(event: MouseEvent) {
+  function hideHoverCard(): void {
+    console.log('🛑 hideHoverCard called');
+    isPositioning = false;
+    
+    if (hovercard) {
+      // Trigger slide-out animation
+      hovercard.style.opacity = '0';
+      hovercard.style.transform = 'translateY(-10px)';
+      
+      // Hide after animation completes
+      setTimeout(() => {
+        if (hovercard) {
+          hovercard.style.display = 'none';
+        }
+      }, 200); // Match the transition duration
+    }
+    document.removeEventListener('click', handleClickOutside);
+    currentLink = null;
+  }
+
+  function handleClickOutside(event: MouseEvent): void {
     if (!hovercard) return;
     
     const target = event.target as HTMLElement;
     
-    if (hovercard.contains(target)) {
-      return;
-    }
+    // Don't hide if clicking inside the hovercard
+    if (hovercard.contains(target)) return;
     
-    let isOnLink = false;
+    // Don't hide if clicking on a link
     let currentElement: HTMLElement | null = target;
-    
     while (currentElement && currentElement !== document.body) {
       if (currentElement.tagName === 'A') {
-        isOnLink = true;
-        break;
+        return;
       }
       currentElement = currentElement.parentElement;
     }
     
-    if (!isOnLink) {
-      hideHoverCard();
-    }
-  }
-
-  function hideHoverCard() {
-    if (hovercard && hovercard.parentNode) {
-      hovercard.parentNode.removeChild(hovercard);
-    }
-    
-    document.removeEventListener('click', handleClickOutside);
-    
-    hovercard = null;
-  }
-
-  function checkCursorInLink(view: EditorView) {
-    const { from } = view.state.selection;
-    const marks = view.state.doc.nodeAt(from)?.marks || [];
-    const linkMark = marks.find(mark => mark.type.name === 'link');
-    
-    if (linkMark) {
-      const href = linkMark.attrs['href'];
-      if (href) {
-        const linkStart = view.state.doc.resolve(from).start();
-        showHoverCard(view, href, linkStart);
-        return true;
-      }
-    }
-    
     hideHoverCard();
-    return false;
   }
 
   function getCurrentView(): EditorView | null {
@@ -433,8 +462,21 @@ export function linkHoverPlugin() {
       (window as any).currentEditorView = editorView;
       
       return {
-        update: (view: EditorView, prevState) => {
-          checkCursorInLink(view);
+        update: (view: EditorView) => {
+          const { from } = view.state.selection;
+          const marks = view.state.doc.nodeAt(from)?.marks || [];
+          const linkMark = marks.find(mark => mark.type.name === 'link');
+          
+          if (linkMark) {
+            const href = linkMark.attrs['href'];
+            if (href) {
+              const linkStart = view.state.doc.resolve(from).start();
+              showHoverCard(view, linkStart);
+              return;
+            }
+          }
+          
+          hideHoverCard();
         },
         destroy: () => {
           hideHoverCard();
@@ -444,9 +486,10 @@ export function linkHoverPlugin() {
     },
     props: {
       handleDOMEvents: {
-        click(view: EditorView, event: MouseEvent) {
+        click: (view: EditorView, event: MouseEvent) => {
           const target = event.target as HTMLElement;
           
+          // Find the clicked link
           let linkElement: HTMLAnchorElement | null = null;
           let currentElement: HTMLElement | null = target;
           
@@ -463,22 +506,15 @@ export function linkHoverPlugin() {
             if (href) {
               const pos = view.posAtDOM(linkElement, 0);
               if (pos !== null) {
-                showHoverCard(view, href, pos);
                 currentLink = linkElement;
+                showHoverCard(view, pos);
               }
             }
           }
           
           return false;
-        },
-      },
-    },
-    appendTransaction: (transactions, oldState, newState) => {
-      if (transactions.some(tr => tr.docChanged || tr.selectionSet)) {
-        return null;
+        }
       }
-      
-      return null;
-    },
+    }
   });
 }

@@ -2,14 +2,42 @@
   @apply max-w-screen-2xl mx-auto p-6 space-y-8;
 
   .btn-grp {
-    @apply flex mb-2;
+    @apply flex flex-wrap gap-2 mb-4;
 
     button {
-      @apply px-4 py-2  text-white border-b border-zinc-700 transition;
+      @apply px-4 py-2 text-zinc-200 border-b border-zinc-700 transition hover:transform hover:-translate-y-0.5 hover:bg-zinc-800;
 
       &.active {
-        @apply border-indigo-600 text-indigo-600;
+        @apply border-indigo-600 text-indigo-400;
       }
+    }
+  }
+
+  .demo__controls {
+    @apply bg-zinc-800 p-6 rounded-lg border border-zinc-700 mb-6;
+
+    h3 {
+      @apply mt-0 text-zinc-200 mb-4;
+    }
+
+    ul {
+      @apply my-4 pl-5;
+    }
+
+    li {
+      @apply my-2 text-zinc-300;
+    }
+  }
+
+  .demo__preview {
+    @apply mt-6 bg-zinc-800 p-6 rounded-lg border border-zinc-700;
+
+    h3 {
+      @apply mt-0 text-zinc-200 mb-4;
+    }
+
+    pre {
+      @apply bg-zinc-900 p-4 rounded border border-zinc-600 overflow-x-auto text-xs leading-relaxed max-h-80 overflow-y-auto text-zinc-200;
     }
   }
 }

@@ -12,6 +12,7 @@ import {
   signal,
   ViewChild,
   effect,
+  OnDestroy,
 } from '@angular/core';
 import { setBlockType, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
@@ -94,17 +95,27 @@ import { MentionUser } from '../interfaces';
   </div>`,
   styleUrl: './hub-editor.component.scss',
 })
-export class ZapEditor extends BaseEditor implements AfterViewInit {
+export class ZapEditor extends BaseEditor implements AfterViewInit, OnDestroy {
   @ViewChild('editor') editor!: ElementRef<HTMLDivElement>;
   toolbar = input<'inline' | 'default'>('default');
+  format = input<'json' | 'html'>('json');
+  value = input<string>('');
+  autoSave = input<boolean>(true);
+  storageKey = input<string>('zap-editor-content');
   usersInput = model<MentionUser[]>([]);
   mentionSearch = output<string>();
   mediaUpload = output<MediaUploadEvent>();
+  onChange = output<string>();
   protected readonly platformId = inject(PLATFORM_ID);
   protected readonly cdr = inject(ChangeDetectorRef);
   href = signal<string>('');
   text = signal<string>('');
   isOnLink = signal<boolean>(false);
+  
+  // Auto-save functionality
+  private autoSaveTimeout: any;
+  private readonly AUTO_SAVE_DELAY = 1000; // 1 second delay
+  private isInitialized = false;
   
   // Inline toolbar state
   showInlineToolbar = signal<boolean>(false);
@@ -120,9 +131,23 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
       this.updateMentionUsers(this.users);
     });
     
+    // Effect to handle value changes from parent
+    effect(() => {
+      const newValue = this.value();
+      if (this.isInitialized && this.editorView && newValue !== this.getCurrentContent()) {
+        this.loadContent(newValue);
+      }
+    });
+    
     this.onMentionSearch = (query: string) => {
       this.mentionSearch.emit(query);
     };
+  }
+
+  ngOnDestroy() {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
   }
 
 
@@ -132,6 +157,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     this.setupInlineToolbarEvents();
     this.setupSlashMediaUpload();
     this.setupDragAndDrop();
+    this.loadInitialContent();
+    this.isInitialized = true;
   }
 
   private initializeEditor() {
@@ -143,6 +170,14 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         this.updateLinkState();
         this.updateInlineToolbar();
         this.cdr.detectChanges();
+        
+        // Auto-save and emit changes
+        if (transaction.docChanged) {
+          // Use setTimeout to ensure the DOM is updated before getting content
+          setTimeout(() => {
+            this.handleContentChange();
+          }, 0);
+        }
       }
     });
   }
@@ -1488,5 +1523,574 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     return `https://picsum.photos/${imageWidth}/${imageHeight}?random=${Date.now()}`;
   }
 
+  // Content handling methods
+  private handleContentChange() {
+    if (!this.editorView) return;
+    
+    const content = this.getCurrentContent();
+    
+    this.onChange.emit(content);
+    
+    if (this.autoSave()) {
+      this.autoSaveContent(content);
+    }
+  }
+
+  private getCurrentContent(): string {
+    if (!this.editorView) return '';
+    
+    const { state } = this.editorView;
+    const { doc } = state;
+    
+    if (this.format() === 'html') {
+      return this.docToHTML(doc);
+    } else {
+      return JSON.stringify(doc.toJSON());
+    }
+  }
+
+  private autoSaveContent(content: string) {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+    
+    this.autoSaveTimeout = setTimeout(() => {
+      if (isPlatformBrowser(this.platformId)) {
+        try {
+          localStorage.setItem(this.storageKey(), content);
+        } catch (error) {
+          console.warn('Failed to save content to localStorage:', error);
+        }
+      }
+    }, this.AUTO_SAVE_DELAY);
+  }
+
+  private loadInitialContent() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    // First, try to load from the value input
+    const inputValue = this.value();
+    if (inputValue) {
+      this.loadContent(inputValue);
+      return;
+    }
+    
+    // If no input value, try to load from localStorage
+    try {
+      const savedContent = localStorage.getItem(this.storageKey());
+      if (savedContent) {
+        this.loadContent(savedContent);
+      } else {
+        // Load default example content
+        this.loadDefaultContent();
+      }
+    } catch (error) {
+      console.warn('Failed to load content from localStorage:', error);
+      this.loadDefaultContent();
+    }
+  }
+
+  private loadContent(content: string) {
+    if (!this.editorView) return;
+    
+    try {
+      let doc;
+      if (this.format() === 'html') {
+        doc = this.htmlToDoc(content);
+      } else {
+        const json = JSON.parse(content);
+        doc = this.editorView.state.schema.nodeFromJSON(json);
+      }
+      
+      if (doc) {
+        const tr = this.editorView.state.tr.replaceWith(0, this.editorView.state.doc.content.size, doc.content);
+        this.editorView.dispatch(tr);
+      }
+    } catch (error) {
+      console.warn('Failed to load content:', error);
+    }
+  }
+
+  private htmlToDoc(html: string): any {
+    // Simple HTML to ProseMirror conversion - in a real implementation, you'd use a proper parser
+    // For now, we'll create a basic paragraph with the HTML content
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(html, 'text/html');
+    
+    // This is a simplified conversion - in production, you'd want a proper HTML parser
+    const textContent = dom.body.textContent || '';
+    return this.editorView!.state.schema.nodes['paragraph'].create({}, 
+      this.editorView!.state.schema.text(textContent)
+    );
+  }
+
+  private loadDefaultContent() {
+    const defaultContent = this.getDefaultContent();
+    this.loadContent(defaultContent);
+  }
+
+  private docToHTML(doc: any): string {
+    // Simple HTML conversion - in a real implementation, you'd use a proper serializer
+    let html = '';
+    doc.descendants((node: any) => {
+      if (node.type.name === 'paragraph') {
+        const align = node.attrs.align || 'left';
+        const style = align !== 'left' ? ` style="text-align: ${align}"` : '';
+        html += `<p${style}>${this.nodeToHTML(node)}</p>`;
+      } else if (node.type.name === 'heading') {
+        const level = node.attrs.level;
+        const align = node.attrs.align || 'left';
+        const style = align !== 'left' ? ` style="text-align: ${align}"` : '';
+        html += `<h${level}${style}>${this.nodeToHTML(node)}</h${level}>`;
+      } else if (node.type.name === 'code_block') {
+        html += `<pre><code>${this.nodeToHTML(node)}</code></pre>`;
+      } else if (node.type.name === 'horizontal_rule') {
+        html += '<hr>';
+      } else if (node.type.name === 'blockquote') {
+        html += `<blockquote>${this.nodeToHTML(node)}</blockquote>`;
+      } else if (node.type.name === 'bullet_list') {
+        html += `<ul>${this.nodeToHTML(node)}</ul>`;
+      } else if (node.type.name === 'ordered_list') {
+        const order = node.attrs.order || 1;
+        const start = order !== 1 ? ` start="${order}"` : '';
+        html += `<ol${start}>${this.nodeToHTML(node)}</ol>`;
+      } else if (node.type.name === 'todo_list') {
+        html += `<ul class="todo__list">${this.nodeToHTML(node)}</ul>`;
+      } else if (node.type.name === 'list_item') {
+        html += `<li>${this.nodeToHTML(node)}</li>`;
+      } else if (node.type.name === 'todo_list_item') {
+        const checked = node.attrs.checked ? 'checked' : '';
+        html += `<li class="todo__list__item"><div class="todo__checkbox__wrapper"><input type="checkbox" class="todo__checkbox__input" ${checked} style="display: none;"><div class="todo__checkbox ${checked ? 'todo__checkbox--checked' : ''}" data-checked="${checked}"></div></div><div class="todo__content">${this.nodeToHTML(node)}</div></li>`;
+      } else if (node.type.name === 'media') {
+        const { src, alt, type, width, height } = node.attrs;
+        if (type === 'image') {
+          html += `<div data-media="true" data-src="${src}" data-alt="${alt}" data-type="${type}" data-width="${width}" data-height="${height}"><img src="${src}" alt="${alt}" style="max-width: ${width}px; max-height: ${height}px;"></div>`;
+        } else if (type === 'video') {
+          html += `<div data-media="true" data-src="${src}" data-alt="${alt}" data-type="${type}" data-width="${width}" data-height="${height}"><video src="${src}" controls style="max-width: ${width}px; max-height: ${height}px;"></video></div>`;
+        } else {
+          html += `<div data-media="true" data-src="${src}" data-alt="${alt}" data-type="${type}" data-width="${width}" data-height="${height}"><a href="${src}" target="_blank">${alt}</a></div>`;
+        }
+      }
+      return true;
+    });
+    return html;
+  }
+
+  private nodeToHTML(node: any): string {
+    if (node.isText) {
+      let text = node.text;
+      if (node.marks) {
+        node.marks.forEach((mark: any) => {
+          switch (mark.type.name) {
+            case 'bold':
+              text = `<strong>${text}</strong>`;
+              break;
+            case 'italic':
+              text = `<em>${text}</em>`;
+              break;
+            case 'underline':
+              text = `<u>${text}</u>`;
+              break;
+            case 'strike':
+              text = `<s>${text}</s>`;
+              break;
+            case 'code':
+              text = `<code>${text}</code>`;
+              break;
+            case 'sup':
+              text = `<sup>${text}</sup>`;
+              break;
+            case 'sub':
+              text = `<sub>${text}</sub>`;
+              break;
+            case 'color':
+              text = `<span style="color: ${mark.attrs.color}">${text}</span>`;
+              break;
+            case 'link':
+              text = `<a href="${mark.attrs.href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+              break;
+          }
+        });
+      }
+      return text;
+    } else if (node.content) {
+      return node.content.map((child: any) => this.nodeToHTML(child)).join('');
+    }
+    return '';
+  }
+
+  private getDefaultContent(): string {
+    const exampleContent = {
+      type: 'doc',
+      content: [
+        // H1 Heading
+        {
+          type: 'heading',
+          attrs: { level: 1, align: 'left' },
+          content: [{ type: 'text', text: 'Complete Zap Editor Example' }]
+        },
+        
+        // H2 Heading
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'All Text Formatting Marks' }]
+        },
+        
+        // Paragraph with all text marks
+        {
+          type: 'paragraph',
+          attrs: { align: 'left' },
+          content: [
+            { type: 'text', text: 'This text has ' },
+            { type: 'text', marks: [{ type: 'bold' }], text: 'bold' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'italic' }], text: 'italic' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'underline' }], text: 'underline' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'strike' }], text: 'strikethrough' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'code' }], text: 'inline code' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'sup' }], text: 'superscript' },
+            { type: 'text', text: ', and ' },
+            { type: 'text', marks: [{ type: 'sub' }], text: 'subscript' },
+            { type: 'text', text: ' formatting.' }
+          ]
+        },
+        
+        // Color examples
+        {
+          type: 'paragraph',
+          attrs: { align: 'left' },
+          content: [
+            { type: 'text', text: 'Color examples: ' },
+            { type: 'text', marks: [{ type: 'color', attrs: { color: '#ff0000' } }], text: 'red text' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'color', attrs: { color: '#00ff00' } }], text: 'green text' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'color', attrs: { color: '#0000ff' } }], text: 'blue text' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'color', attrs: { color: '#ff00ff' } }], text: 'purple text' },
+            { type: 'text', text: ', ' },
+            { type: 'text', marks: [{ type: 'color', attrs: { color: '#ffff00' } }], text: 'yellow text' }
+          ]
+        },
+        
+        // Link example
+        {
+          type: 'paragraph',
+          attrs: { align: 'left' },
+          content: [
+            { type: 'text', text: 'Link example: ' },
+            { type: 'text', marks: [{ type: 'link', attrs: { href: 'https://example.com', title: 'Example Link' } }], text: 'Visit Example.com' }
+          ]
+        },
+        
+        // H3 Heading
+        {
+          type: 'heading',
+          attrs: { level: 3, align: 'left' },
+          content: [{ type: 'text', text: 'All Heading Levels' }]
+        },
+        
+        // H4 Heading
+        {
+          type: 'heading',
+          attrs: { level: 4, align: 'left' },
+          content: [{ type: 'text', text: 'H4 Heading' }]
+        },
+        
+        // H5 Heading
+        {
+          type: 'heading',
+          attrs: { level: 5, align: 'left' },
+          content: [{ type: 'text', text: 'H5 Heading' }]
+        },
+        
+        // H6 Heading
+        {
+          type: 'heading',
+          attrs: { level: 6, align: 'left' },
+          content: [{ type: 'text', text: 'H6 Heading' }]
+        },
+        
+        // Text alignment examples
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'Text Alignment Examples' }]
+        },
+        
+        {
+          type: 'paragraph',
+          attrs: { align: 'left' },
+          content: [{ type: 'text', text: 'Left aligned text' }]
+        },
+        
+        {
+          type: 'paragraph',
+          attrs: { align: 'center' },
+          content: [{ type: 'text', text: 'Center aligned text' }]
+        },
+        
+        {
+          type: 'paragraph',
+          attrs: { align: 'right' },
+          content: [{ type: 'text', text: 'Right aligned text' }]
+        },
+        
+        {
+          type: 'paragraph',
+          attrs: { align: 'justify' },
+          content: [{ type: 'text', text: 'Justified text that spreads across the full width of the container with even spacing between words.' }]
+        },
+        
+        // Lists section
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'List Examples' }]
+        },
+        
+        // Bullet list
+        {
+          type: 'bullet_list',
+          content: [
+            {
+              type: 'list_item',
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'First bullet point' }]
+                }
+              ]
+            },
+            {
+              type: 'list_item',
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'Second bullet point with ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'bold text' }]
+                }
+              ]
+            },
+            {
+              type: 'list_item',
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'Third bullet point' }]
+                }
+              ]
+            }
+          ]
+        },
+        
+        // Numbered list
+        {
+          type: 'ordered_list',
+          attrs: { order: 1 },
+          content: [
+            {
+              type: 'list_item',
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'First numbered item' }]
+                }
+              ]
+            },
+            {
+              type: 'list_item',
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'Second numbered item' }]
+                }
+              ]
+            },
+            {
+              type: 'list_item',
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'Third numbered item' }]
+                }
+              ]
+            }
+          ]
+        },
+        
+        // Todo list
+        {
+          type: 'todo_list',
+          content: [
+            {
+              type: 'todo_list_item',
+              attrs: { checked: true },
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'Completed todo item' }]
+                }
+              ]
+            },
+            {
+              type: 'todo_list_item',
+              attrs: { checked: false },
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'Pending todo item' }]
+                }
+              ]
+            },
+            {
+              type: 'todo_list_item',
+              attrs: { checked: false },
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { align: 'left' },
+                  content: [{ type: 'text', text: 'Another pending item' }]
+                }
+              ]
+            }
+          ]
+        },
+        
+        // Code block
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'Code Block Example' }]
+        },
+        
+        {
+          type: 'code_block',
+          attrs: { language: 'typescript', wrapped: false },
+          content: [
+            { type: 'text', text: 'function greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconst user = "World";\ngreet(user);' }
+          ]
+        },
+        
+        // Blockquote
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'Blockquote Example' }]
+        },
+        
+        {
+          type: 'blockquote',
+          content: [
+            {
+              type: 'paragraph',
+              attrs: { align: 'left' },
+              content: [
+                { type: 'text', text: 'This is a blockquote example. You can use it to highlight important information, quotes, or callouts. It has a distinctive left border and italic styling.' }
+              ]
+            }
+          ]
+        },
+        
+        // Horizontal rule
+        {
+          type: 'horizontal_rule'
+        },
+        
+        // Mention example
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'Mention Example' }]
+        },
+        
+        {
+          type: 'paragraph',
+          attrs: { align: 'left' },
+          content: [
+            { type: 'text', text: 'Try typing ' },
+            { type: 'text', marks: [{ type: 'code' }], text: '@ ' },
+            { type: 'text', text: 'to mention someone like ' },
+            { type: 'mention', attrs: { id: '1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=3', email: 'john@example.com' } },
+            { type: 'text', text: ' or ' },
+            { type: 'mention', attrs: { id: '2', name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=4', email: 'jane@example.com' } }
+          ]
+        },
+        
+        // Media example
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'Media Upload Example' }]
+        },
+        
+        {
+          type: 'paragraph',
+          attrs: { align: 'left' },
+          content: [
+            { type: 'text', text: 'You can upload images, videos, and documents by dragging and dropping them into the editor or using the file upload button in the toolbar.' }
+          ]
+        },
+        
+        // Slash commands
+        {
+          type: 'heading',
+          attrs: { level: 2, align: 'left' },
+          content: [{ type: 'text', text: 'Slash Commands' }]
+        },
+        
+        {
+          type: 'paragraph',
+          attrs: { align: 'left' },
+          content: [
+            { type: 'text', text: 'Try typing ' },
+            { type: 'text', marks: [{ type: 'code' }], text: '/ ' },
+            { type: 'text', text: 'to see available blocks and commands. This includes headings, lists, code blocks, quotes, and more!' }
+          ]
+        },
+        
+        // Final instruction
+        {
+          type: 'paragraph',
+          attrs: { align: 'center' },
+          content: [
+            { type: 'text', text: 'This example demonstrates all available blocks, marks, and styling options in the Zap Editor!' }
+          ]
+        }
+      ]
+    };
+
+    return JSON.stringify(exampleContent);
+  }
+
+  // Public methods
+  public getContent(): string {
+    return this.getCurrentContent();
+  }
+
+  public setContent(content: string) {
+    this.loadContent(content);
+  }
+
+  public clearContent() {
+    if (!this.editorView) return;
+    
+    const tr = this.editorView.state.tr.replaceWith(0, this.editorView.state.doc.content.size, 
+      this.editorView.state.schema.nodes['paragraph'].create()
+    );
+    this.editorView.dispatch(tr);
+  }
 
 }

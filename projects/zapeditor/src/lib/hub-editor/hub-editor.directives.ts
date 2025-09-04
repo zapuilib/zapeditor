@@ -251,6 +251,7 @@ export class BaseEditor {
               'data-mention-name': name,
               'data-mention-avatar': avatar,
               'data-mention-email': email,
+              style: 'display: inline-block;',
             },
             `@${name}`,
           ];
