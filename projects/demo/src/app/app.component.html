@@ -1,32 +1,28 @@
 <div class="demo__container">
   <div class="demo__section">
     <h2>Zap text editor with Value & onChange Support</h2>
-    
+
     <!-- Control buttons -->
     <div class="btn-grp">
-      <button [class.active]="toolbar() === 'inline'"  (click)="toolbar.set('inline')">Inline</button>
-      <button [class.active]="toolbar() === 'default'" (click)="toolbar.set('default')">Top</button>
+      <button
+        [class.active]="toolbar() === 'inline'"
+        (click)="toolbar.set('inline')"
+      >
+        Inline
+      </button>
+      <button
+        [class.active]="toolbar() === 'default'"
+        (click)="toolbar.set('default')"
+      >
+        Top
+      </button>
     </div>
-    
-    <!-- Demo controls -->
-    <div class="demo__controls">
-      <h3>Demo Controls</h3>
-      <div class="btn-grp">
-        <button (click)="loadExampleContent()">Load Example Content</button>
-        <button (click)="clearEditor()">Clear Editor</button>
-        <button (click)="getEditorContent()">Get Content</button>
-        <button (click)="testContentChange()">Test Content Change</button>
-      </div>
-      <p><strong>Features:</strong></p>
-      <ul>
-        <li>✅ Auto-saves to localStorage (1 second delay)</li>
-        <li>✅ Loads from localStorage on page reload</li>
-        <li>✅ Value input binding</li>
-        <li>✅ onChange event emission</li>
-        <li>✅ Default example content with all block types</li>
-      </ul>
-    </div>
-    
+
+    <button (click)="loadExampleContent()">Load Example Content</button>
+    <button (click)="clearEditor()">Clear Editor</button>
+    <button (click)="getEditorContent()">Get Content</button>
+    <button (click)="testContentChange()">Test Content Change</button>
+
     <!-- Editor -->
     <zap-editor
       #defaultEditor
@@ -40,13 +36,13 @@
       (onChange)="onEditorChange($event)"
     >
     </zap-editor>
-    
+
     <!-- Content preview -->
     <div class="demo__preview">
       <h3>Content Preview (JSON)</h3>
       <div class="mb-4">
         <strong>Content Length:</strong> {{ editorValue().length }} characters
-        <br>
+        <br />
         <strong>Last Updated:</strong> {{ lastUpdated() }}
       </div>
       <pre>{{ editorValue() | json }}</pre>

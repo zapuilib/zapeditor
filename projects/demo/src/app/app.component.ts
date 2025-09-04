@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 })
 export class AppComponent {
   title = 'demo';
-  toolbar = signal<'inline' | 'default'>('default');
+  toolbar = signal<'inline' | 'default'>('inline');
   editorValue = signal<string>('');
   lastUpdated = signal<string>('Never');
   @ViewChild('defaultEditor') defaultEditor!: ZapEditor;
