@@ -22,8 +22,12 @@ export class UploadService {
    * Returns a real image URL from picsum.photos
    */
   uploadFile(file: File): Observable<UploadResponse> {
-    // Simulate upload delay
-    const uploadTime = Math.random() * 2000 + 1000; // 1-3 seconds
+    // Simulate upload delay based on file size
+    // Base time + additional time based on file size (up to 50MB)
+    const baseTime = 1000; // 1 second base
+    const sizeBasedTime = (file.size / (50 * 1024 * 1024)) * 5000; // Up to 5 seconds for 50MB
+    const randomVariation = Math.random() * 2000; // 0-2 seconds random
+    const uploadTime = baseTime + sizeBasedTime + randomVariation;
     
     return of(this.generateUploadResponse(file)).pipe(
       delay(uploadTime)

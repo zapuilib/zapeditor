@@ -20,7 +20,7 @@ class MediaNodeView implements NodeView {
   private isUploading = false;
   private isUploaded = false;
   private mediaUrl = '';
-  private mediaType: 'image' | 'video' = 'image';
+  private mediaType: 'image' | 'video' | 'document' = 'image';
   private mediaAlt = '';
   private mediaWidth = 300;
   private mediaHeight = 200;
@@ -117,29 +117,38 @@ class MediaNodeView implements NodeView {
       video.src = this.mediaUrl;
       video.controls = true;
       container.appendChild(video);
+    } else {
+      // Document type - create a document preview
+      const documentPreview = this.createDocumentPreview();
+      container.appendChild(documentPreview);
     }
 
-    // Left resize handle
-    const leftResizeHandle = document.createElement('div');
-    leftResizeHandle.className = 'media__resize__handle media__resize__handle--left';
-    container.appendChild(leftResizeHandle);
+    // Resize handles (only for images and videos)
+    if (this.mediaType === 'image' || this.mediaType === 'video') {
+      // Left resize handle
+      const leftResizeHandle = document.createElement('div');
+      leftResizeHandle.className = 'media__resize__handle media__resize__handle--left';
+      container.appendChild(leftResizeHandle);
 
-    // Right resize handle
-    const rightResizeHandle = document.createElement('div');
-    rightResizeHandle.className = 'media__resize__handle media__resize__handle--right';
-    container.appendChild(rightResizeHandle);
+      // Right resize handle
+      const rightResizeHandle = document.createElement('div');
+      rightResizeHandle.className = 'media__resize__handle media__resize__handle--right';
+      container.appendChild(rightResizeHandle);
+    }
 
     // Toolbar (shown on hover)
     const toolbar = document.createElement('div');
     toolbar.className = 'media__toolbar';
 
-    // Expand button
-    const expandBtn = this.createToolbarButton('fa-expand', 'Expand');
-    expandBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.onExpand();
-    });
-    toolbar.appendChild(expandBtn);
+    // Expand button (only for images and videos)
+    if (this.mediaType === 'image' || this.mediaType === 'video') {
+      const expandBtn = this.createToolbarButton('fa-expand', 'Expand');
+      expandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.onExpand();
+      });
+      toolbar.appendChild(expandBtn);
+    }
 
     // Download button
     const downloadBtn = this.createToolbarButton('fa-download', 'Download');
@@ -161,29 +170,119 @@ class MediaNodeView implements NodeView {
 
     // Hover effects
     container.addEventListener('mouseenter', () => {
-      leftResizeHandle.style.opacity = '1';
-      rightResizeHandle.style.opacity = '1';
+      if (this.mediaType === 'image' || this.mediaType === 'video') {
+        const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
+        const rightHandle = container.querySelector('.media__resize__handle--right') as HTMLElement;
+        if (leftHandle) leftHandle.style.opacity = '1';
+        if (rightHandle) rightHandle.style.opacity = '1';
+      }
       toolbar.style.opacity = '1';
     });
 
     container.addEventListener('mouseleave', () => {
-      leftResizeHandle.style.opacity = '0';
-      rightResizeHandle.style.opacity = '0';
+      if (this.mediaType === 'image' || this.mediaType === 'video') {
+        const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
+        const rightHandle = container.querySelector('.media__resize__handle--right') as HTMLElement;
+        if (leftHandle) leftHandle.style.opacity = '0';
+        if (rightHandle) rightHandle.style.opacity = '0';
+      }
       toolbar.style.opacity = '0';
     });
 
-    // Resize functionality
-    leftResizeHandle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      this.startResize(e, 'left');
-    });
+    // Resize functionality (only for images and videos)
+    if (this.mediaType === 'image' || this.mediaType === 'video') {
+      const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
+      const rightHandle = container.querySelector('.media__resize__handle--right') as HTMLElement;
+      
+      if (leftHandle) {
+        leftHandle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          this.startResize(e, 'left');
+        });
+      }
 
-    rightResizeHandle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      this.startResize(e, 'right');
-    });
+      if (rightHandle) {
+        rightHandle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          this.startResize(e, 'right');
+        });
+      }
+    }
 
     this.dom.appendChild(container);
+  }
+
+  private createDocumentPreview() {
+    const preview = document.createElement('div');
+    preview.className = 'media__document__preview';
+    
+    // File icon
+    const icon = document.createElement('div');
+    icon.className = 'media__document__icon';
+    icon.innerHTML = this.getFileIcon();
+    
+    // Details container
+    const details = document.createElement('div');
+    details.className = 'media__document__details';
+    
+    // File name
+    const fileName = document.createElement('div');
+    fileName.className = 'media__document__name';
+    fileName.textContent = this.mediaAlt;
+    
+    // File size
+    const fileSize = document.createElement('div');
+    fileSize.className = 'media__document__size';
+    fileSize.textContent = this.formatFileSize();
+    
+    // Assemble details
+    details.appendChild(fileName);
+    details.appendChild(fileSize);
+    
+    // Assemble preview
+    preview.appendChild(icon);
+    preview.appendChild(details);
+    
+    return preview;
+  }
+
+  private getFileIcon(): string {
+    const extension = this.mediaAlt.split('.').pop()?.toLowerCase();
+    
+    switch (extension) {
+      case 'pdf':
+        return '<i class="fa-regular fa-file-pdf"></i>';
+      case 'doc':
+      case 'docx':
+        return '<i class="fa-regular fa-file-word"></i>';
+      case 'xls':
+      case 'xlsx':
+        return '<i class="fa-regular fa-file-excel"></i>';
+      case 'ppt':
+      case 'pptx':
+        return '<i class="fa-regular fa-file-powerpoint"></i>';
+      case 'zip':
+      case 'rar':
+      case '7z':
+        return '<i class="fa-regular fa-file-archive"></i>';
+      case 'txt':
+        return '<i class="fa-regular fa-file-lines"></i>';
+      case 'csv':
+        return '<i class="fa-regular fa-file-csv"></i>';
+      case 'js':
+      case 'ts':
+      case 'css':
+      case 'html':
+        return '<i class="fa-regular fa-file-code"></i>';
+      default:
+        return '<i class="fa-regular fa-file"></i>';
+    }
+  }
+
+  private formatFileSize(): string {
+    // This would need the actual file size from the node attributes
+    // For now, return a placeholder
+    return '1.2 MB';
   }
 
   private createPlaceholderState() {

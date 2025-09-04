@@ -23,7 +23,7 @@ import { HubEditorToolbar, InlineToolbarComponent } from '../components';
 
 export interface MediaUploadEvent {
   file: File;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'document';
   url: string;
 }
 import { BaseEditor } from './hub-editor.directives';
@@ -128,6 +128,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     if (!isPlatformBrowser(this.platformId)) return;
     this.initializeEditor();
     this.setupInlineToolbarEvents();
+    this.setupSlashMediaUpload();
   }
 
   private initializeEditor() {
@@ -174,6 +175,20 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     }, { passive: true });
   }
 
+  private setupSlashMediaUpload() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    // Listen for slash media upload events from the slash plugin
+    document.addEventListener('slashMediaUpload', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { file, view } = customEvent.detail;
+      if (file && view === this.editorView) {
+        // Use the existing file upload logic
+        this.insertMediaNode(file);
+      }
+    });
+  }
+
   private updateInlineToolbar() {
     if (this.toolbar() !== 'inline' || !this.editorView) {
       this.showInlineToolbar.set(false);
@@ -186,6 +201,21 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
 
     // Only show toolbar if there's a text selection
     if (from === to) {
+      this.showInlineToolbar.set(false);
+      return;
+    }
+
+    // Check if selection includes any media nodes - if so, don't show inline toolbar
+    let hasMediaNode = false;
+    state.doc.nodesBetween(from, to, (node) => {
+      if (node.type.name === 'media') {
+        hasMediaNode = true;
+        return false; // Stop searching
+      }
+      return true;
+    });
+
+    if (hasMediaNode) {
       this.showInlineToolbar.set(false);
       return;
     }
@@ -1167,24 +1197,54 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
 
     // Validate file type
     const validTypes = [
+      // Images
       'image/jpeg',
       'image/jpg', 
       'image/png',
       'image/gif',
       'image/webp',
+      'image/svg+xml',
+      // Videos
       'video/mp4',
       'video/quicktime',
-      'video/webm'
+      'video/webm',
+      'video/avi',
+      'video/mov',
+      // Documents
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      'application/rtf',
+      // Archives
+      'application/zip',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed',
+      'application/x-tar',
+      'application/gzip',
+      // Code files
+      'text/javascript',
+      'text/typescript',
+      'text/css',
+      'text/html',
+      'application/json',
+      'text/xml',
+      'application/xml'
     ];
     
     if (!validTypes.includes(file.type)) {
-      alert('Please select a valid image or video file');
+      alert('Please select a valid media file (images, videos, documents, archives, or code files)');
       return;
     }
 
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB');
+    // Validate file size (50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      alert('File size must be less than 50MB');
       return;
     }
 
@@ -1199,7 +1259,14 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     const { from } = state.selection;
     
     // Determine media type
-    const type = file.type.startsWith('image/') ? 'image' : 'video';
+    let type: 'image' | 'video' | 'document';
+    if (file.type.startsWith('image/')) {
+      type = 'image';
+    } else if (file.type.startsWith('video/')) {
+      type = 'video';
+    } else {
+      type = 'document';
+    }
     
     // Create object URL for preview
     const url = URL.createObjectURL(file);
@@ -1225,7 +1292,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     this.simulateMediaUpload(file, url, type, width, height);
   }
 
-  private calculateSmartDimensions(file: File, type: 'image' | 'video', url: string): Promise<{ width: number; height: number }> {
+  private calculateSmartDimensions(file: File, type: 'image' | 'video' | 'document', url: string): Promise<{ width: number; height: number }> {
     return new Promise((resolve) => {
       if (type === 'image') {
         const img = new Image();
@@ -1269,8 +1336,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         // For videos, use a reasonable default size
         resolve({ width: 600, height: 400 });
       } else {
-        // Fallback
-        resolve({ width: 300, height: 200 });
+        // For documents, use full width with smaller height
+        resolve({ width: 800, height: 80 });
       }
     });
   }
@@ -1293,7 +1360,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     return { width, height };
   }
 
-  private simulateMediaUpload(file: File, url: string, type: 'image' | 'video', width: number, height: number) {
+  private simulateMediaUpload(file: File, url: string, type: 'image' | 'video' | 'document', width: number, height: number) {
     // Don't complete upload immediately - wait for parent to call updateMediaWithUploadedUrl
     // The media node will stay in uploading state until the real URL is provided
     // Just emit the upload event to parent

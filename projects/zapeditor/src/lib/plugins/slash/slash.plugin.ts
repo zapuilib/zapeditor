@@ -163,6 +163,40 @@ function getSuggestions(query: string): SlashCommand[] {
     .slice(0, 10);
 }
 
+function triggerFileUpload(view: EditorView) {
+  // Create a hidden file input element
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.zip,.rar,.7z,.tar,.gz,.js,.ts,.css,.html,.json,.xml';
+  input.style.display = 'none';
+  
+  // Add to DOM temporarily
+  document.body.appendChild(input);
+  
+  // Trigger file selection
+  input.click();
+  
+  // Handle file selection
+  input.addEventListener('change', (event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      // Dispatch a custom event that the editor can listen to
+      const customEvent = new CustomEvent('slashMediaUpload', {
+        detail: { file, view }
+      });
+      document.dispatchEvent(customEvent);
+    }
+    
+    // Clean up
+    document.body.removeChild(input);
+  });
+  
+  // Clean up if cancelled
+  input.addEventListener('cancel', () => {
+    document.body.removeChild(input);
+  });
+}
+
 function insertSlashCommand(view: EditorView, command: SlashCommand, range: { from: number; to: number }) {
   try {
     const { state, dispatch } = view;
@@ -250,12 +284,28 @@ function insertSlashCommand(view: EditorView, command: SlashCommand, range: { fr
           tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
           break;
         case 'media':
-          // For media, just insert a paragraph for now
-          // The actual media handling would be implemented separately
-          const mediaNode = schema.nodes['paragraph'].create();
-          tr = tr.insert(insertPos, mediaNode);
-          tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + mediaNode.nodeSize - 1));
-          break;
+          // First trigger file upload, then clean up text after a short delay
+          triggerFileUpload(view);
+          // Clean up the slash text after file picker opens
+          setTimeout(() => {
+            try {
+              const { state } = view;
+              const { $from } = state.selection;
+              const currentLineStart = $from.start();
+              const currentLineEnd = $from.end();
+              const currentLineText = state.doc.textBetween(currentLineStart, currentLineEnd, '\n', '\0');
+              
+              if (currentLineText.includes('/')) {
+                const tr = state.tr.delete(currentLineStart - 1, currentLineEnd + 1);
+                tr.setMeta(slashPluginKey, { active: false });
+                view.dispatch(tr);
+                view.focus();
+              }
+            } catch (error) {
+              console.log('Slash text cleanup skipped:', error);
+            }
+          }, 100);
+          return;
         default:
           const defaultNode = schema.nodes['paragraph'].create();
           tr = tr.insert(insertPos, defaultNode);
@@ -336,12 +386,28 @@ function insertSlashCommand(view: EditorView, command: SlashCommand, range: { fr
           tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
           break;
         case 'media':
-          // For media, just insert a paragraph for now
-          // The actual media handling would be implemented separately
-          const mediaNode2 = schema.nodes['paragraph'].create();
-          tr = tr.insert(insertPos, mediaNode2);
-          tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + mediaNode2.nodeSize - 1));
-          break;
+          // First trigger file upload, then clean up text after a short delay
+          triggerFileUpload(view);
+          // Clean up the slash text after file picker opens
+          setTimeout(() => {
+            try {
+              const { state } = view;
+              const { $from } = state.selection;
+              const currentLineStart = $from.start();
+              const currentLineEnd = $from.end();
+              const currentLineText = state.doc.textBetween(currentLineStart, currentLineEnd, '\n', '\0');
+              
+              if (currentLineText.includes('/')) {
+                const tr = state.tr.delete(currentLineStart - 1, currentLineEnd + 1);
+                tr.setMeta(slashPluginKey, { active: false });
+                view.dispatch(tr);
+                view.focus();
+              }
+            } catch (error) {
+              console.log('Slash text cleanup skipped:', error);
+            }
+          }, 100);
+          return;
         default:
           const defaultNode = schema.nodes['paragraph'].create();
           tr = tr.insert(insertPos, defaultNode);
