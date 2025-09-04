@@ -167,6 +167,12 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         const target = event.target as Element;
         const editorElement = this.editor?.nativeElement;
         
+        // Check if click is on the inline toolbar itself
+        const inlineToolbarElement = document.querySelector('inline-toolbar');
+        if (inlineToolbarElement && inlineToolbarElement.contains(target)) {
+          return; // Don't close if clicking on the toolbar
+        }
+        
         // Check if click is outside the editor
         if (editorElement && !editorElement.contains(target)) {
           this.showInlineToolbar.set(false);
