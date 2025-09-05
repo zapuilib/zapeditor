@@ -319,7 +319,7 @@ class CodeBlockView {
 
     const newNode = currentNode.type.create(
       { language, wrapped: currentNode.attrs['wrapped'] },
-      textContent ? state.schema.text(textContent) : null,
+      textContent ? [state.schema.text(textContent)] : [],
     );
 
     const tr = state.tr.replaceWith(pos, pos + currentNode.nodeSize, newNode);
