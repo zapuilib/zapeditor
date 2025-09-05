@@ -38,7 +38,6 @@ class MediaNodeView implements NodeView {
     const container = document.createElement('div');
     container.className = 'media__node';
 
-    // Prevent click from selecting the whole line
     container.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -66,13 +65,10 @@ class MediaNodeView implements NodeView {
     this.dom.innerHTML = '';
 
     if (this.isUploading) {
-      // Show uploading state with same dimensions as final image
       this.createUploadingState();
     } else if (this.isUploaded && this.mediaUrl) {
-      // Show uploaded media
       this.createUploadedState();
     } else {
-      // Show placeholder
       this.createPlaceholderState();
     }
   }
@@ -83,7 +79,6 @@ class MediaNodeView implements NodeView {
     overlay.style.width = `${this.mediaWidth}px`;
     overlay.style.height = `${this.mediaHeight}px`;
 
-    // Background image preview (blurred)
     if (this.mediaUrl) {
       const bgImage = document.createElement('div');
       bgImage.className = 'media__uploading__bg';
@@ -91,7 +86,6 @@ class MediaNodeView implements NodeView {
       overlay.appendChild(bgImage);
     }
 
-    // Spinner
     const spinner = document.createElement('div');
     spinner.className = 'media__upload__spinner';
     overlay.appendChild(spinner);
@@ -118,29 +112,23 @@ class MediaNodeView implements NodeView {
       video.controls = true;
       container.appendChild(video);
     } else {
-      // Document type - create a document preview
       const documentPreview = this.createDocumentPreview();
       container.appendChild(documentPreview);
     }
 
-    // Resize handles (only for images and videos)
     if (this.mediaType === 'image' || this.mediaType === 'video') {
-      // Left resize handle
       const leftResizeHandle = document.createElement('div');
       leftResizeHandle.className = 'media__resize__handle media__resize__handle--left';
       container.appendChild(leftResizeHandle);
 
-      // Right resize handle
       const rightResizeHandle = document.createElement('div');
       rightResizeHandle.className = 'media__resize__handle media__resize__handle--right';
       container.appendChild(rightResizeHandle);
     }
 
-    // Toolbar (shown on hover)
     const toolbar = document.createElement('div');
     toolbar.className = 'media__toolbar';
 
-    // Expand button (only for images and videos)
     if (this.mediaType === 'image' || this.mediaType === 'video') {
       const expandBtn = this.createToolbarButton('fa-expand', 'Expand');
       expandBtn.addEventListener('click', (e) => {
@@ -150,7 +138,6 @@ class MediaNodeView implements NodeView {
       toolbar.appendChild(expandBtn);
     }
 
-    // Download button
     const downloadBtn = this.createToolbarButton('fa-download', 'Download');
     downloadBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -158,7 +145,6 @@ class MediaNodeView implements NodeView {
     });
     toolbar.appendChild(downloadBtn);
 
-    // Delete button
     const deleteBtn = this.createToolbarButton('fa-trash', 'Delete');
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -168,7 +154,6 @@ class MediaNodeView implements NodeView {
 
     container.appendChild(toolbar);
 
-    // Hover effects
     container.addEventListener('mouseenter', () => {
       if (this.mediaType === 'image' || this.mediaType === 'video') {
         const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
@@ -189,7 +174,6 @@ class MediaNodeView implements NodeView {
       toolbar.style.opacity = '0';
     });
 
-    // Resize functionality (only for images and videos)
     if (this.mediaType === 'image' || this.mediaType === 'video') {
       const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
       const rightHandle = container.querySelector('.media__resize__handle--right') as HTMLElement;
@@ -216,30 +200,24 @@ class MediaNodeView implements NodeView {
     const preview = document.createElement('div');
     preview.className = 'media__document__preview';
     
-    // File icon
     const icon = document.createElement('div');
     icon.className = 'media__document__icon';
     icon.innerHTML = this.getFileIcon();
     
-    // Details container
     const details = document.createElement('div');
     details.className = 'media__document__details';
     
-    // File name
     const fileName = document.createElement('div');
     fileName.className = 'media__document__name';
     fileName.textContent = this.mediaAlt;
     
-    // File size
     const fileSize = document.createElement('div');
     fileSize.className = 'media__document__size';
     fileSize.textContent = this.formatFileSize();
     
-    // Assemble details
     details.appendChild(fileName);
     details.appendChild(fileSize);
     
-    // Assemble preview
     preview.appendChild(icon);
     preview.appendChild(details);
     
@@ -280,9 +258,30 @@ class MediaNodeView implements NodeView {
   }
 
   private formatFileSize(): string {
-    // This would need the actual file size from the node attributes
-    // For now, return a placeholder
-    return '1.2 MB';
+    const fileSize = this.node.attrs['size'];
+    
+    if (!fileSize || fileSize === 0) {
+      return '0 B';
+    }
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = fileSize;
+    let unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    if (unitIndex === 0) {
+      return `${Math.round(size)} ${units[unitIndex]}`;
+    } else if (size < 10) {
+      return `${size.toFixed(2)} ${units[unitIndex]}`;
+    } else if (size < 100) {
+      return `${size.toFixed(1)} ${units[unitIndex]}`;
+    } else {
+      return `${Math.round(size)} ${units[unitIndex]}`;
+    }
   }
 
   private createPlaceholderState() {
@@ -310,7 +309,6 @@ class MediaNodeView implements NodeView {
     const startWidth = this.mediaWidth;
     const aspectRatio = startWidth / this.mediaHeight;
     
-    // Get editor boundaries
     const editorElement = this.view.dom;
     const editorRect = editorElement.getBoundingClientRect();
     const editorWidth = editorRect.width;
@@ -322,10 +320,8 @@ class MediaNodeView implements NodeView {
       let newWidth = startWidth;
 
       if (direction === 'right') {
-        // Right resize - drag right (positive delta) should resize up
         newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + deltaX));
       } else {
-        // Left resize - drag inside (positive delta) should resize down
         newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth - deltaX));
       }
 
@@ -334,7 +330,6 @@ class MediaNodeView implements NodeView {
       this.mediaWidth = newWidth;
       this.mediaHeight = newHeight;
       
-      // Update the container width (it will auto-center due to margin: 0 auto)
       const container = this.dom.querySelector('.media__container') as HTMLElement;
       if (container) {
         container.style.width = `${newWidth}px`;
@@ -357,38 +352,30 @@ class MediaNodeView implements NodeView {
   }
 
   private onExpand() {
-    // Create full-width preview modal
     this.createPreviewModal();
   }
 
   private createPreviewModal() {
-    // Create modal overlay
     const modal = document.createElement('div');
     modal.className = 'media__preview__modal';
 
-    // Create modal content
     const content = document.createElement('div');
     content.className = 'media__preview__content';
 
-    // Create header with buttons
     const header = document.createElement('div');
     header.className = 'media__preview__header';
 
-    // Create close button
     const closeBtn = document.createElement('button');
     closeBtn.className = 'media__preview__close';
     closeBtn.innerHTML = '<i class="fa-regular fa-times"></i>';
 
-    // Create download button
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'media__preview__download';
     downloadBtn.innerHTML = '<i class="fa-regular fa-download"></i>';
 
-    // Create media container
     const mediaContainer = document.createElement('div');
     mediaContainer.className = 'media__preview__media';
 
-    // Create media element
     let mediaElement: HTMLElement;
     if (this.mediaType === 'image') {
       mediaElement = document.createElement('img');
@@ -402,7 +389,6 @@ class MediaNodeView implements NodeView {
       mediaElement.className = 'w-full h-full object-contain block';
     }
 
-    // Add event listeners
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.closePreviewModal(modal);
@@ -421,7 +407,6 @@ class MediaNodeView implements NodeView {
       e.stopPropagation();
     });
 
-    // Assemble modal
     header.appendChild(downloadBtn);
     header.appendChild(closeBtn);
     mediaContainer.appendChild(mediaElement);
@@ -429,10 +414,8 @@ class MediaNodeView implements NodeView {
     content.appendChild(mediaContainer);
     modal.appendChild(content);
 
-    // Add to document
     document.body.appendChild(modal);
 
-    // Prevent body scroll
     document.body.style.overflow = 'hidden';
   }
 
@@ -442,7 +425,6 @@ class MediaNodeView implements NodeView {
   }
 
   private onDownload() {
-    // Handle download functionality
     const link = document.createElement('a');
     link.href = this.mediaUrl;
     link.download = this.mediaAlt || 'media-download';
@@ -451,7 +433,6 @@ class MediaNodeView implements NodeView {
   }
 
   private onDelete() {
-    // Handle delete functionality
     const pos = this.getPos();
     if (pos !== undefined) {
       const tr = this.view.state.tr.delete(pos, pos + this.node.nodeSize);
@@ -478,7 +459,6 @@ class MediaNodeView implements NodeView {
   }
 
   destroy() {
-    // Clean up any event listeners or object URLs
     if (this.mediaUrl) {
       URL.revokeObjectURL(this.mediaUrl);
     }

@@ -1,8 +1,8 @@
-import { Component, signal, ViewChild } from '@angular/core';
+import { Component, signal, ViewChild, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { ZapEditor, MentionUser, MediaUploadEvent } from 'zapeditor';
 import { UploadService, UploadResponse } from './services/upload.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-root',
@@ -10,17 +10,59 @@ import { CommonModule } from '@angular/common';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
   title = 'demo';
   toolbar = signal<'inline' | 'default'>('inline');
   editorValue = signal<string>('');
   lastUpdated = signal<string>('Never');
+  autoSave = signal<boolean>(true);
+  storageKey = signal<string>('zap-editor-demo');
   @ViewChild('defaultEditor') defaultEditor!: ZapEditor;
   @ViewChild('inlineEditor') inlineEditor!: ZapEditor;
   
-  constructor(private uploadService: UploadService) {}
+  private autoSaveTimeout: any;
+  private readonly AUTO_SAVE_DELAY = 10;
+  private readonly platformId = inject(PLATFORM_ID);
+  
+  constructor(private uploadService: UploadService) {
+    this.loadFromLocalStorage();
+    this.toolbar.set(localStorage.getItem('toolbar') as 'inline' | 'default' || 'inline');
+  }
 
-  // Mock users for mention functionality
+  ngOnDestroy() {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+  }
+
+  private autoSaveContent(content: string) {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+
+    this.autoSaveTimeout = setTimeout(() => {
+      if (isPlatformBrowser(this.platformId)) {
+        try {
+          localStorage.setItem(this.storageKey(), content);
+        } catch (error) {
+        }
+      }
+    }, this.AUTO_SAVE_DELAY);
+  }
+
+  private loadFromLocalStorage() {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    try {
+      const savedContent = localStorage.getItem(this.storageKey());
+      if (savedContent) {
+        this.editorValue.set(savedContent);
+        this.lastUpdated.set('Loaded from localStorage');
+      }
+    } catch (error) {
+    }
+  }
+
   users = signal<MentionUser[]>([
     {
       id: '1',
@@ -81,7 +123,6 @@ export class AppComponent {
       avatar: 'https://i.pravatar.cc/150?img=3',
     };
 
-    // Check if Bikas already exists in the users array
     const bikasExists = currentUsers.some(
       (user) => user.id === '9' || user.name === 'Bikas'
     );
@@ -93,11 +134,9 @@ export class AppComponent {
 
   onMediaUpload(event: MediaUploadEvent) {
     
-    // Simulate real upload process
     this.uploadService.uploadFile(event.file).subscribe({
       next: (response: UploadResponse) => {
         
-        // Update both editors with the real uploaded URL
         if (this.defaultEditor) {
           this.defaultEditor.updateMediaWithUploadedUrl(response.url);
         }
@@ -106,7 +145,6 @@ export class AppComponent {
         }
       },
       error: (error) => {
-        console.error('Upload failed:', error);
       }
     });
   }
@@ -114,27 +152,28 @@ export class AppComponent {
   onEditorChange(content: string) {
     this.editorValue.set(content);
     this.lastUpdated.set(new Date().toLocaleTimeString());
+    
+    if (this.autoSave()) {
+      this.autoSaveContent(content);
+    }
   }
 
   loadExampleContent() {
     const exampleContent = {
       type: 'doc',
       content: [
-        // H1 Heading
         {
           type: 'heading',
           attrs: { level: 1, align: 'left' },
           content: [{ type: 'text', text: 'Complete Zap Editor Example' }]
         },
         
-        // H2 Heading
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
           content: [{ type: 'text', text: 'All Text Formatting Marks' }]
         },
         
-        // Paragraph with all text marks
         {
           type: 'paragraph',
           attrs: { align: 'left' },
@@ -157,7 +196,6 @@ export class AppComponent {
           ]
         },
         
-        // Color examples
         {
           type: 'paragraph',
           attrs: { align: 'left' },
@@ -175,7 +213,6 @@ export class AppComponent {
           ]
         },
         
-        // Link example
         {
           type: 'paragraph',
           attrs: { align: 'left' },
@@ -185,35 +222,30 @@ export class AppComponent {
           ]
         },
         
-        // H3 Heading
         {
           type: 'heading',
           attrs: { level: 3, align: 'left' },
           content: [{ type: 'text', text: 'All Heading Levels' }]
         },
         
-        // H4 Heading
         {
           type: 'heading',
           attrs: { level: 4, align: 'left' },
           content: [{ type: 'text', text: 'H4 Heading' }]
         },
         
-        // H5 Heading
         {
           type: 'heading',
           attrs: { level: 5, align: 'left' },
           content: [{ type: 'text', text: 'H5 Heading' }]
         },
         
-        // H6 Heading
         {
           type: 'heading',
           attrs: { level: 6, align: 'left' },
           content: [{ type: 'text', text: 'H6 Heading' }]
         },
         
-        // Text alignment examples
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
@@ -244,14 +276,12 @@ export class AppComponent {
           content: [{ type: 'text', text: 'Justified text that spreads across the full width of the container with even spacing between words.' }]
         },
         
-        // Lists section
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
           content: [{ type: 'text', text: 'List Examples' }]
         },
         
-        // Bullet list
         {
           type: 'bullet_list',
           content: [
@@ -288,7 +318,6 @@ export class AppComponent {
           ]
         },
         
-        // Numbered list
         {
           type: 'ordered_list',
           attrs: { order: 1 },
@@ -326,7 +355,6 @@ export class AppComponent {
           ]
         },
         
-        // Todo list
         {
           type: 'todo_list',
           content: [
@@ -366,7 +394,6 @@ export class AppComponent {
           ]
         },
         
-        // Code block
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
@@ -381,7 +408,6 @@ export class AppComponent {
           ]
         },
         
-        // Blockquote
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
@@ -401,12 +427,10 @@ export class AppComponent {
           ]
         },
         
-        // Horizontal rule
         {
           type: 'horizontal_rule'
         },
         
-        // Mention example
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
@@ -426,7 +450,6 @@ export class AppComponent {
           ]
         },
         
-        // Media example
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
@@ -441,7 +464,6 @@ export class AppComponent {
           ]
         },
         
-        // Slash commands
         {
           type: 'heading',
           attrs: { level: 2, align: 'left' },
@@ -458,7 +480,6 @@ export class AppComponent {
           ]
         },
         
-        // Final instruction
         {
           type: 'paragraph',
           attrs: { align: 'center' },
@@ -481,8 +502,6 @@ export class AppComponent {
   getEditorContent() {
     if (this.defaultEditor) {
       const content = this.defaultEditor.getContent();
-      console.log('Current editor content:', content);
-      console.log('Content length:', content.length);
       this.editorValue.set(content);
       this.lastUpdated.set(new Date().toLocaleTimeString());
       alert('Content updated and logged to console');
@@ -507,5 +526,25 @@ export class AppComponent {
       
       this.defaultEditor.setContent(JSON.stringify(testContent));
     }
+  }
+
+  toggleAutoSave() {
+    this.autoSave.set(!this.autoSave());
+  }
+
+  clearLocalStorage() {
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        localStorage.removeItem(this.storageKey());
+        this.editorValue.set('');
+        this.lastUpdated.set('LocalStorage cleared');
+      } catch (error) {
+      }
+    }
+  }
+
+  setToolbar(toolbar: 'inline' | 'default') {
+    localStorage.setItem('toolbar', toolbar);
+    this.toolbar.set(toolbar);
   }
 }

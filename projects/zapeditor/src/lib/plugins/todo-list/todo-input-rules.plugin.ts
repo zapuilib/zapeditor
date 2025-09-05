@@ -5,7 +5,6 @@ import type { Schema } from 'prosemirror-model';
 export function createTodoInputRulesPlugin(schema: Schema) {
   const { todo_list, todo_list_item } = schema.nodes;
 
-  // Input rule for [ ] (unchecked todo)
   const uncheckedTodoRule = new InputRule(
     /^\s?\[\s\]\s$/,
     (state, match, start, end) => {
@@ -23,7 +22,6 @@ export function createTodoInputRulesPlugin(schema: Schema) {
     }
   );
 
-  // Input rule for [x] (checked todo)
   const checkedTodoRule = new InputRule(
     /^\s?\[[xX]\]\s$/,
     (state, match, start, end) => {
@@ -39,7 +37,6 @@ export function createTodoInputRulesPlugin(schema: Schema) {
       
       const result = tr.wrap(range, wrapping);
       
-      // Find the newly created todo list item and mark it as checked
       const $newPos = result.selection.$from;
       let depth = $newPos.depth;
       while (depth > 0) {

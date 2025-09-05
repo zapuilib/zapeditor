@@ -6,30 +6,32 @@
     <div class="btn-grp">
       <button
         [class.active]="toolbar() === 'inline'"
-        (click)="toolbar.set('inline')"
+        (click)="setToolbar('inline')"
       >
         Inline
       </button>
       <button
         [class.active]="toolbar() === 'default'"
-        (click)="toolbar.set('default')"
+        (click)="setToolbar('default')"
       >
         Top
       </button>
     </div>
-
+<!-- 
     <button (click)="loadExampleContent()">Load Example Content</button>
     <button (click)="clearEditor()">Clear Editor</button>
     <button (click)="getEditorContent()">Get Content</button>
     <button (click)="testContentChange()">Test Content Change</button>
+    <button (click)="toggleAutoSave()" [class.active]="autoSave()">
+      {{ autoSave() ? 'Disable' : 'Enable' }} Auto-Save
+    </button>
+    <button (click)="clearLocalStorage()">Clear LocalStorage</button> -->
 
     <!-- Editor -->
     <zap-editor
       #defaultEditor
       [toolbar]="toolbar()"
       [value]="editorValue()"
-      [autoSave]="true"
-      [storageKey]="'zap-editor-demo'"
       [usersInput]="users()"
       (mentionSearch)="onMentionSearch($event)"
       (mediaUpload)="onMediaUpload($event)"

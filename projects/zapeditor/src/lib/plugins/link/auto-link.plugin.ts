@@ -1,10 +1,6 @@
 import { Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
-/**
- * This plugin allows for the creation of standalone links in the editor.
- * It handles the pasting of URLs and the conversion of selected text to links.
- */
 export function autoLinkPlugin() {
   return new Plugin({
     props: {

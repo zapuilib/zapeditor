@@ -34,7 +34,6 @@ export function createTodoListPlugin(): Plugin<TodoListPluginState> {
         click(view, event) {
           const target = event.target as HTMLElement;
           
-          // Check if clicked on a custom todo checkbox
           if (target.classList.contains('todo__checkbox') && target.closest('.todo__list__item')) {
             event.preventDefault();
             event.stopPropagation();
@@ -44,7 +43,6 @@ export function createTodoListPlugin(): Plugin<TodoListPluginState> {
             
             const $pos = view.state.doc.resolve(pos);
             
-            // Find the todo list item node (could be nested in other lists)
             let depth = $pos.depth;
             while (depth > 0) {
               const node = $pos.node(depth);
@@ -53,7 +51,6 @@ export function createTodoListPlugin(): Plugin<TodoListPluginState> {
                 const listItemPos = $pos.before(depth);
                 const currentChecked = node.attrs['checked'];
                 
-                // Toggle the checked state
                 tr.setNodeMarkup(listItemPos, null, {
                   ...node.attrs,
                   checked: !currentChecked

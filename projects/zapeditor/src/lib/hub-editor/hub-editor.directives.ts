@@ -268,7 +268,8 @@ export class BaseEditor {
           type: { default: 'image' },
           uploading: { default: false },
           width: { default: null },
-          height: { default: null }
+          height: { default: null },
+          size: { default: null }
         },
         parseDOM: [
           {
@@ -279,7 +280,8 @@ export class BaseEditor {
               type: dom.getAttribute('data-type') || 'image',
               uploading: dom.getAttribute('data-uploading') === 'true',
               width: dom.getAttribute('data-width') ? parseInt(dom.getAttribute('data-width')) : null,
-              height: dom.getAttribute('data-height') ? parseInt(dom.getAttribute('data-height')) : null
+              height: dom.getAttribute('data-height') ? parseInt(dom.getAttribute('data-height')) : null,
+              size: dom.getAttribute('data-size') ? parseInt(dom.getAttribute('data-size')) : null
             })
           }
         ],
@@ -293,7 +295,8 @@ export class BaseEditor {
               'data-type': node.attrs['type'],
               'data-uploading': node.attrs['uploading'],
               'data-width': node.attrs['width'],
-              'data-height': node.attrs['height']
+              'data-height': node.attrs['height'],
+              'data-size': node.attrs['size'],
             }
           ] as any;
         }
@@ -407,7 +410,6 @@ export class BaseEditor {
         mediaPlugin(),
         createTodoListPlugin(),
         createTodoInputRulesPlugin(this.schema),
-        createTodoKeymapPlugin(this.schema, this.editorView),
         history(),
         keymap({
           'Mod-z': undo,
@@ -440,6 +442,7 @@ export class BaseEditor {
             return true;
           },
         }),
+        createTodoKeymapPlugin(this.schema, this.editorView),
         keymap(baseKeymap),
       ],
     });

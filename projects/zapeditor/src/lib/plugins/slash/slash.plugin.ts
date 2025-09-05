@@ -7,14 +7,12 @@ import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
 export const slashPluginKey = new PluginKey<SlashPluginState>('slash');
 
-
 function getSlashRegex() {
   return /(^|\s)\/(\w*)$/;
 }
 
 function getSlashMatch($position: any) {
   try {
-    // Check if position is valid and has a parent
     if (!$position || !$position.parent || $position.depth === 0) {
       return null;
     }
@@ -48,7 +46,6 @@ function getSlashMatch($position: any) {
 
     return null;
   } catch (error) {
-    // If there's any error getting the slash match, return null
     return null;
   }
 }
@@ -70,36 +67,49 @@ function getSuggestions(query: string): SlashCommand[] {
     .slice(0, 10);
 }
 
+function isInListContext($from: any, schema: any): boolean {
+  let depth = $from.depth;
+  
+  while (depth > 0) {
+    const node = $from.node(depth);
+    if (
+      node.type === schema.nodes['bullet_list'] ||
+      node.type === schema.nodes['ordered_list'] ||
+      node.type === schema.nodes['todo_list'] ||
+      node.type === schema.nodes['list_item'] ||
+      node.type === schema.nodes['todo_list_item']
+    ) {
+      return true;
+    }
+    depth--;
+  }
+  
+  return false;
+}
+
 function triggerFileUpload(view: EditorView) {
-  // Create a hidden file input element
   const input = document.createElement('input');
   input.type = 'file';
   input.accept =
     'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.zip,.rar,.7z,.tar,.gz,.js,.ts,.css,.html,.json,.xml';
   input.style.display = 'none';
 
-  // Add to DOM temporarily
   document.body.appendChild(input);
 
-  // Trigger file selection
   input.click();
 
-  // Handle file selection
   input.addEventListener('change', (event) => {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      // Dispatch a custom event that the editor can listen to
       const customEvent = new CustomEvent('slashMediaUpload', {
         detail: { file, view },
       });
       document.dispatchEvent(customEvent);
     }
 
-    // Clean up
     document.body.removeChild(input);
   });
 
-  // Clean up if cancelled
   input.addEventListener('cancel', () => {
     document.body.removeChild(input);
   });
@@ -114,8 +124,19 @@ function insertSlashCommand(
     const { state, dispatch } = view;
     const { schema } = state;
 
-    // Check if current line has text before the slash command
     const $from = state.selection.$from;
+    
+    const listCommands = ['bullet-list', 'numbered-list', 'todo-list'];
+    if (listCommands.includes(command.action) && isInListContext($from, schema)) {
+      let tr = state.tr;
+      
+      tr = tr.delete(range.from, range.to);
+      tr = tr.setMeta(slashPluginKey, { active: false });
+      dispatch(tr);
+      view.focus();
+      return;
+    }
+
     const currentLineStart = $from.start();
     const currentLineEnd = $from.end();
     const currentLineText = state.doc.textBetween(
@@ -125,28 +146,22 @@ function insertSlashCommand(
       '\0'
     );
     
-    // Check if there's text before the slash command
     const slashIndex = currentLineText.indexOf('/');
     const textBeforeSlash = slashIndex > 0 ? currentLineText.substring(0, slashIndex).trim() : '';
     const hasTextBeforeSlash = textBeforeSlash.length > 0;
 
     let tr = state.tr;
 
-    // Determine insertion position based on whether there's text before slash
     let insertPos: number;
     
     if (hasTextBeforeSlash) {
-      // If there's text before slash, preserve it and add block on next line
-      // Just delete the slash command, keep the existing text
       tr = tr.delete(range.from, range.to);
       insertPos = currentLineEnd;
     } else {
-      // If no text before slash, replace the entire current line with the new block
       tr = tr.delete(currentLineStart - 1, currentLineEnd + 1);
       insertPos = currentLineStart - 1;
     }
 
-    // Insert the appropriate content based on the command
     switch (command.action) {
       case 'heading1':
         const h1Node = schema.nodes['heading'].create({ level: 1 });
@@ -232,9 +247,7 @@ function insertSlashCommand(
         tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + 1));
         break;
       case 'media':
-        // First trigger file upload, then clean up text after a short delay
         triggerFileUpload(view);
-        // Clean up the slash text after file picker opens
         setTimeout(() => {
           try {
             const { state } = view;
@@ -258,7 +271,6 @@ function insertSlashCommand(
               view.focus();
             }
           } catch (error) {
-            console.log('Slash text cleanup skipped:', error);
           }
         }, 100);
         return;
@@ -274,7 +286,6 @@ function insertSlashCommand(
     dispatch(tr);
     view.focus();
   } catch (error) {
-    console.error('Error inserting slash command:', error);
   }
 }
 
@@ -308,7 +319,6 @@ export function slashPlugin() {
       return;
     }
 
-    // Group suggestions by category
     const groupedSuggestions = suggestions.reduce((acc, command) => {
       if (!acc[command.category]) {
         acc[command.category] = [];
@@ -355,7 +365,6 @@ export function slashPlugin() {
     const slashStartPos = state.range.from;
     const slashCoords = view.coordsAtPos(slashStartPos);
 
-    // Use smart positioning
     const triggerRect = {
       left: slashCoords.left,
       top: slashCoords.top,
@@ -376,7 +385,6 @@ export function slashPlugin() {
     suggestionElement.style.top = `${position.y}px`;
     suggestionElement.style.display = 'block';
 
-    // Add click outside handler
     if (clickOutsideHandler) {
       document.removeEventListener('click', clickOutsideHandler);
     }
@@ -640,4 +648,3 @@ export function slashPlugin() {
     },
   });
 }
-

@@ -1,12 +1,6 @@
 import { inputRules, InputRule } from 'prosemirror-inputrules';
 import type { Schema } from 'prosemirror-model';
 
-/**
- * This plugin adds support for markdown-like syntax in the editor.
- * It supports three backticks to create a code block and single backticks to surround text with a code mark.
- * @param schema - The schema to use for the editor.
- * @returns A plugin that adds support for markdown-like syntax in the editor.
- */
 export function markdownPlugin(schema: Schema) {
     const { code_block } = schema.nodes;
     const { code: codeMark } = schema.marks;

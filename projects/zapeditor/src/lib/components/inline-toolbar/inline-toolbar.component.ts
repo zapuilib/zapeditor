@@ -187,7 +187,6 @@ import { COLORS, TEXT_FORMATTING_STYLES } from '../../constants/styles.constant'
   styleUrl: './inline-toolbar.component.scss'
 })
 export class InlineToolbarComponent {
-  // Inputs
   position = input<{ x: number; y: number; position?: 'top' | 'bottom' }>({ x: 0, y: 0, position: 'top' });
   currentColor = input<string>('#FFFFFFCC');
   isBold = input<boolean>(false);
@@ -203,7 +202,6 @@ export class InlineToolbarComponent {
   href = input<string>('');
   text = input<string>('');
 
-  // Outputs
   bold = output<void>();
   italic = output<void>();
   underline = output<void>();
@@ -218,10 +216,8 @@ export class InlineToolbarComponent {
   blockStyle = output<string>();
   textFormatting = output<string>();
 
-  // Dropdown state
   showDropdown: string | null = null;
 
-  // Data arrays (same as main toolbar)
   blockStyles = [
     { label: 'Paragraph', value: 'p', cmd: '⌘⌥0' },
     { label: 'Heading 1', value: 'h1', cmd: '⌘⌥1' },
@@ -235,7 +231,6 @@ export class InlineToolbarComponent {
   textFormattingStyles = TEXT_FORMATTING_STYLES;
   colors = COLORS;
 
-  // Methods
   toggleDropdown(type: string) {
     this.showDropdown = this.showDropdown === type ? null : type;
   }
@@ -266,9 +261,7 @@ export class InlineToolbarComponent {
   }
 
   onLinkClick() {
-    // First populate the link data (like main toolbar does)
     this.linkButtonClick.emit();
-    // Then open the dropdown
     this.toggleDropdown('link');
   }
 }

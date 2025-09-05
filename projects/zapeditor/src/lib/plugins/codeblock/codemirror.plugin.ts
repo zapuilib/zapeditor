@@ -143,10 +143,6 @@ function getLanguageSupport(language: string) {
   }
 }
 
-/**
- * CodeMirror node view for code blocks.
- * This plugin is used to render the code blocks in the editor.
- */
 class CodeBlockView {
   private node: any;
   private view: EditorView;
@@ -183,15 +179,13 @@ class CodeBlockView {
           }
           return null;
         }),
-        // Add placeholder for empty code blocks
-        placeholder('Start typing your code...'),
+        placeholder('Press shift+enter to start a new line'),
       ],
     });
 
     const wrapper = document.createElement('div');
     wrapper.className = 'pm-codeblock';
 
-    // Create toolbar container at the top
     this.controlsContainer = document.createElement('div');
     this.controlsContainer.className = 'codeblock-toolbar';
 
@@ -258,7 +252,6 @@ class CodeBlockView {
       if (isVisible) {
         languageDropdown.style.display = 'none';
       } else {
-        // Position dropdown relative to the language selector within the code block
         languageDropdown.style.position = 'absolute';
         languageDropdown.style.left = '0';
         languageDropdown.style.top = '100%';
@@ -484,7 +477,6 @@ class CodeBlockView {
         this.view.dispatch(tr);
       }
     } catch (error) {
-      // Silently handle errors to prevent editor malfunction
     }
   }
 

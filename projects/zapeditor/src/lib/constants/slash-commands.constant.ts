@@ -1,7 +1,6 @@
 import { SlashCommand } from '../interfaces';
 
 export const SLASH_COMMANDS: SlashCommand[] = [
-  // Headings
   {
     id: 'heading1',
     title: 'Heading 1',
@@ -30,7 +29,6 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     shortcut: '⌘⌥3',
   },
 
-  // Lists
   {
     id: 'bullet-list',
     title: 'Bullet List',
@@ -56,7 +54,6 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     keywords: ['todo', 'task', 'checkbox', 'checklist'],
   },
 
-  // Media
   {
     id: 'media',
     title: 'Media',
@@ -66,7 +63,6 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     keywords: ['media', 'image', 'video', 'file', 'upload'],
   },
 
-  // Blocks
   {
     id: 'code-block',
     title: 'Code Block',

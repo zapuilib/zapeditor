@@ -18,7 +18,6 @@ function getMentionRegex() {
 
 function getMentionMatch($position: any) {
   try {
-    // Check if position is valid and has a parent
     if (!$position || !$position.parent || $position.depth === 0) {
       return null;
     }
@@ -43,7 +42,6 @@ function getMentionMatch($position: any) {
 
     return null;
   } catch (error) {
-    // If there's any error getting the mention match, return null
     return null;
   }
 }
@@ -147,7 +145,6 @@ export function mentionPlugin(options: MentionPluginOptions) {
 
     const mentionCoords = view.coordsAtPos(mentionStartPos);
 
-    // Use smart positioning
     const triggerRect = {
       left: mentionCoords.left,
       top: mentionCoords.top,
@@ -168,7 +165,6 @@ export function mentionPlugin(options: MentionPluginOptions) {
     suggestionElement.style.top = `${position.y}px`;
     suggestionElement.style.display = 'block';
 
-    // Add click outside handler
     if (clickOutsideHandler) {
       document.removeEventListener('click', clickOutsideHandler);
     }
@@ -178,7 +174,6 @@ export function mentionPlugin(options: MentionPluginOptions) {
       const editorElement = view.dom;
       const suggestionsElement = suggestionElement;
       
-      // Check if click is outside both editor and suggestions
       if (!editorElement.contains(target) && !suggestionsElement?.contains(target)) {
         view.dispatch(view.state.tr.setMeta(mentionPluginKey, { active: false }));
         hideSuggestions();
@@ -214,7 +209,6 @@ export function mentionPlugin(options: MentionPluginOptions) {
       suggestionElement = null;
     }
     
-    // Clean up click outside handler
     if (clickOutsideHandler) {
       document.removeEventListener('click', clickOutsideHandler);
       clickOutsideHandler = null;
@@ -223,12 +217,10 @@ export function mentionPlugin(options: MentionPluginOptions) {
     hoverEnabled = true;
   }
 
-  // Store reference to update function
   const updateUsers = (newUsers: MentionUser[]) => {
     currentUsers = newUsers;
   };
 
-  // Expose update function through options
   if (options.onUsersUpdate) {
     options.onUsersUpdate = updateUsers;
   }
@@ -267,12 +259,10 @@ export function mentionPlugin(options: MentionPluginOptions) {
         const match = getMentionMatch($from);
 
         if (match) {
-          // Emit search event if callback is provided
           if (searchCallback) {
             searchCallback(match.query);
           }
           
-          // Use current users (which may have been updated)
           const suggestions = getSuggestions(match.query, currentUsers);
           const newState = {
             active: true,
@@ -411,7 +401,6 @@ export function mentionPlugin(options: MentionPluginOptions) {
           }
           hideSuggestions();
           
-          // Clean up click outside handler
           if (clickOutsideHandler) {
             document.removeEventListener('click', clickOutsideHandler);
             clickOutsideHandler = null;
@@ -421,7 +410,6 @@ export function mentionPlugin(options: MentionPluginOptions) {
     },
   });
 
-  // Add updateUsers method to the plugin
   (plugin as any).updateUsers = updateUsers;
   
   return plugin;
