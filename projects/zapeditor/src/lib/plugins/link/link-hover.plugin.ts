@@ -2,6 +2,9 @@ import { Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
+/**
+ * Link hover plugin - shows hovercard when hovering over links
+ */
 export function linkHoverPlugin() {
   let hovercard: HTMLElement | null = null;
   let currentLink: HTMLAnchorElement | null = null;
@@ -29,6 +32,7 @@ export function linkHoverPlugin() {
   function createNormalContent(): DocumentFragment {
     const fragment = document.createDocumentFragment();
     
+    // Edit button
     const editBtn = document.createElement('button');
     editBtn.textContent = 'Edit link';
     editBtn.className = 'prosemirror__link__card__edit__button';
@@ -37,31 +41,42 @@ export function linkHoverPlugin() {
       showEditMode();
     };
 
+    // Separator
     const separator = document.createElement('div');
     separator.className = 'prosemirror__link__card__separator';
 
+    // Actions container
     const actions = document.createElement('div');
     actions.className = 'prosemirror__link__card__actions';
 
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = 'Copy link';
-    copyBtn.className = 'prosemirror__link__card__copy__button';
-    copyBtn.onclick = (e) => {
-      e.stopPropagation();
-      copyLink();
-    };
-
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = 'Remove link';
-    removeBtn.className = 'prosemirror__link__card__remove__button';
-    removeBtn.onclick = (e) => {
+    // Unlink button
+    const unlinkBtn = document.createElement('button');
+    unlinkBtn.innerHTML = '<i class="fa-regular fa-link-slash"></i>';
+    unlinkBtn.title = 'Remove link';
+    unlinkBtn.className = 'prosemirror__link__card__unlink';
+    unlinkBtn.onclick = (e) => {
       e.stopPropagation();
       removeLink();
     };
-
-    actions.appendChild(copyBtn);
-    actions.appendChild(removeBtn);
-
+    
+    // Icon separator
+    const iconSep = document.createElement('div');
+    iconSep.className = 'prosemirror__link__card__icon__separator';
+    
+    // New tab button
+    const newTabBtn = document.createElement('button');
+    newTabBtn.innerHTML = '<i class="fa-regular fa-external-link-alt"></i>';
+    newTabBtn.title = 'Open in new tab';
+    newTabBtn.className = 'prosemirror__link__card__newtab';
+    newTabBtn.onclick = (e) => {
+      e.stopPropagation();
+      openInNewTab();
+    };
+    
+    actions.appendChild(unlinkBtn);
+    actions.appendChild(iconSep);
+    actions.appendChild(newTabBtn);
+    
     fragment.appendChild(editBtn);
     fragment.appendChild(separator);
     fragment.appendChild(actions);
@@ -72,123 +87,223 @@ export function linkHoverPlugin() {
   function createEditContent(): DocumentFragment {
     const fragment = document.createDocumentFragment();
     
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.placeholder = 'Enter URL';
-    input.className = 'prosemirror__link__card__input';
-    input.value = currentLink?.href || '';
-    input.onkeydown = (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        saveLink();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        showNormalMode();
-      }
-    };
-
-    const buttons = document.createElement('div');
-    buttons.className = 'prosemirror__link__card__edit__buttons';
-
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Save';
-    saveBtn.className = 'prosemirror__link__card__save__button';
-    saveBtn.onclick = (e) => {
+    const form = document.createElement('div');
+    form.className = 'prosemirror__link__card__edit__form';
+    
+    // URL input
+    const urlGroup = document.createElement('div');
+    urlGroup.className = 'prosemirror__link__card__input__group';
+    
+    const urlLabel = document.createElement('label');
+    urlLabel.textContent = 'Type or paste a link';
+    urlLabel.className = 'prosemirror__link__card__input__label';
+    
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.placeholder = 'https://';
+    urlInput.className = 'prosemirror__link__card__input';
+    urlInput.value = currentLink?.getAttribute('href') || '';
+    
+    urlGroup.appendChild(urlLabel);
+    urlGroup.appendChild(urlInput);
+    
+    // Text input
+    const textGroup = document.createElement('div');
+    textGroup.className = 'prosemirror__link__card__input__group';
+    
+    const textLabel = document.createElement('label');
+    textLabel.textContent = 'Display text (optional)';
+    textLabel.className = 'prosemirror__link__card__input__label';
+    
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.placeholder = 'Link text';
+    textInput.className = 'prosemirror__link__card__input';
+    textInput.value = currentLink?.textContent || '';
+    
+    textGroup.appendChild(textLabel);
+    textGroup.appendChild(textInput);
+    
+    // Buttons
+    const buttonGroup = document.createElement('div');
+    buttonGroup.className = 'prosemirror__link__card__button__group';
+    
+    const updateBtn = document.createElement('button');
+    updateBtn.textContent = 'Update';
+    updateBtn.className = 'prosemirror__link__card__update';
+    updateBtn.onclick = (e) => {
       e.stopPropagation();
-      saveLink();
+      updateLink(urlInput.value, textInput.value);
     };
-
+    
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.className = 'prosemirror__link__card__cancel__button';
+    cancelBtn.className = 'prosemirror__link__card__cancel';
     cancelBtn.onclick = (e) => {
       e.stopPropagation();
       showNormalMode();
     };
-
-    buttons.appendChild(saveBtn);
-    buttons.appendChild(cancelBtn);
-
-    fragment.appendChild(input);
-    fragment.appendChild(buttons);
-
+    
+    buttonGroup.appendChild(updateBtn);
+    buttonGroup.appendChild(cancelBtn);
+    
+    form.appendChild(urlGroup);
+    form.appendChild(textGroup);
+    form.appendChild(buttonGroup);
+    fragment.appendChild(form);
+    
     return fragment;
   }
 
-  function showNormalMode() {
-    if (!hovercard || !currentLink) return;
+  function showNormalMode(): void {
+    if (!hovercard) return;
     
-    isEditMode = false;
     const content = (hovercard as any).content;
     content.innerHTML = '';
     content.appendChild(createNormalContent());
     
-    hovercard.style.opacity = '1';
-    hovercard.style.transform = 'translateY(0)';
+    hovercard.classList.remove('prosemirror__link__card__edit');
+    isEditMode = false;
   }
 
-  function showEditMode() {
-    if (!hovercard || !currentLink) return;
+  function showEditMode(): void {
+    if (!hovercard) return;
     
-    isEditMode = true;
     const content = (hovercard as any).content;
     content.innerHTML = '';
     content.appendChild(createEditContent());
     
-    const input = content.querySelector('input') as HTMLInputElement;
-    if (input) {
-      input.focus();
-      input.select();
-    }
+    hovercard.classList.add('prosemirror__link__card__edit');
+    isEditMode = true;
   }
 
-  function copyLink() {
+  function removeLink(): void {
     if (!currentLink) return;
     
-    navigator.clipboard.writeText(currentLink.href).then(() => {
-      hideHoverCard();
-    }).catch(() => {
+    const view = getCurrentView();
+    if (!view) return;
+    
+    const pos = view.posAtDOM(currentLink, 0);
+    if (pos === null) return;
+    
+    const linkMark = view.state.schema.marks['link'];
+    if (!linkMark) return;
+    
+    // Find the range of the link
+    let from = pos;
+    let to = pos;
+    
+    view.state.doc.descendants((node, nodePos) => {
+      if (nodePos < pos) return true;
+      
+      node.marks.forEach(mark => {
+        if (mark.type === linkMark) {
+          const start = nodePos;
+          const end = nodePos + node.nodeSize;
+          
+          if (pos >= start && pos < end) {
+            from = start;
+            to = end;
+          }
+        }
+      });
+      
+      return true;
     });
-  }
-
-  function removeLink() {
-    if (!currentLink) return;
     
-    const view = (currentLink as any).__prosemirrorView as EditorView;
-    if (!view) return;
-
-    const { state, dispatch } = view;
-    const { from, to } = state.selection;
-    const { link } = state.schema.marks;
-
-    const tr = state.tr.removeMark(from, to, link);
-    dispatch(tr);
+    if (to > from) {
+      const tr = view.state.tr.removeMark(from, to, linkMark);
+      view.dispatch(tr);
+    }
+    
     hideHoverCard();
   }
 
-  function saveLink() {
-    if (!hovercard || !currentLink) return;
+  function updateLink(href: string, text: string): void {
+    if (!currentLink || !href) return;
     
-    const input = hovercard.querySelector('input') as HTMLInputElement;
-    if (!input) return;
-
-    const newUrl = input.value.trim();
-    if (!newUrl) return;
-
-    const view = (currentLink as any).__prosemirrorView as EditorView;
+    const view = getCurrentView();
     if (!view) return;
-
-    const { state, dispatch } = view;
-    const { from, to } = state.selection;
-    const { link } = state.schema.marks;
-
-    const tr = state.tr.addMark(from, to, link.create({ href: newUrl }));
-    dispatch(tr);
+    
+      const pos = view.posAtDOM(currentLink, 0);
+    if (pos === null) return;
+    
+        const linkMark = view.state.schema.marks['link'];
+    if (!linkMark) return;
+    
+    // Find the range of the link
+          let from = pos;
+          let to = pos;
+          
+    view.state.doc.descendants((node, nodePos) => {
+      if (nodePos < pos) return true;
+            
+            node.marks.forEach(mark => {
+        if (mark.type === linkMark) {
+          const start = nodePos;
+          const end = nodePos + node.nodeSize;
+          
+          if (pos >= start && pos < end) {
+                  from = start;
+                  to = end;
+                }
+              }
+            });
+            
+            return true;
+          });
+          
+          if (to > from) {
+            let tr = view.state.tr;
+            
+      // Remove old link mark
+            tr = tr.removeMark(from, to, linkMark);
+      
+      // Add new link mark
+            tr = tr.addMark(from, to, linkMark.create({ href }));
+            
+      // Update text if provided
+            if (text && text !== currentLink.textContent) {
+              tr = tr.replaceWith(from, to, view.state.schema.text(text, [linkMark.create({ href })]));
+            }
+            
+            view.dispatch(tr);
+          }
+    
     hideHoverCard();
+  }
+
+  function openInNewTab(): void {
+    if (currentLink) {
+      const href = currentLink.getAttribute('href');
+      if (href) {
+        window.open(href, '_blank', 'noopener,noreferrer');
+      }
+    }
+    hideHoverCard();
+  }
+
+  function findLinkElement(view: EditorView, pos: number): HTMLAnchorElement | null {
+    const domNode = view.nodeDOM(pos);
+    if (!domNode) return null;
+    
+    let currentElement: HTMLElement | null = domNode as HTMLElement;
+    
+    while (currentElement && currentElement !== view.dom) {
+      if (currentElement.tagName === 'A') {
+        return currentElement as HTMLAnchorElement;
+      }
+      currentElement = currentElement.parentElement;
+    }
+    
+    return null;
   }
 
   function showHoverCard(view: EditorView, pos: number): void {
+    console.log('🚀 showHoverCard called with pos:', pos, 'isPositioning:', isPositioning);
+    
     if (isPositioning) {
+      console.log('⏸️ Already positioning, skipping...');
       return;
     }
     
@@ -196,31 +311,40 @@ export function linkHoverPlugin() {
       hovercard = createHoverCard();
       document.body.appendChild(hovercard);
     }
-
-    const content = (hovercard as any).content;
-    content.innerHTML = '';
-    content.appendChild(createNormalContent());
-
-    hovercard.style.display = 'block';
-    hovercard.style.opacity = '0';
-    hovercard.style.transform = 'translateY(-10px)';
-
+    
     isPositioning = true;
-
+    
+    // Show normal mode first to get proper dimensions
+    showNormalMode();
+    
+    // Position the hovercard off-screen initially to get dimensions
+    hovercard.style.left = '-9999px';
+    hovercard.style.top = '-9999px';
+    hovercard.style.display = 'flex';
+    
+    // Wait for the hovercard to be rendered and get its dimensions
     requestAnimationFrame(() => {
+      if (!hovercard) {
+        isPositioning = false;
+        return;
+      }
+      
+      // Use double requestAnimationFrame to ensure stable coordinates
       requestAnimationFrame(() => {
         if (!hovercard) {
           isPositioning = false;
           return;
         }
-
-        const coords = view.coordsAtPos(pos);
-        if (!coords) {
-          isPositioning = false;
-          return;
-        }
         
+        // Use ProseMirror coordinates directly - this gives us the exact cursor position
+        const coords = view.coordsAtPos(pos);
+        console.log('🔍 ProseMirror coords:', coords);
+        
+        // Check if coordinates look stable (not at the left edge of line)
+        // If left is too small (like 57), wait for stable coordinates
         if (coords.left < 100) {
+          console.log('⏳ Coordinates not stable yet, waiting...');
+          // Wait another frame for stable coordinates
           requestAnimationFrame(() => {
             if (!hovercard) {
               isPositioning = false;
@@ -228,13 +352,16 @@ export function linkHoverPlugin() {
             }
             
             const stableCoords = view.coordsAtPos(pos);
+            console.log('🔍 Stable ProseMirror coords:', stableCoords);
             
             if (stableCoords.left < 100) {
+              console.log('⚠️ Still not stable, using current coordinates');
             }
             
             positionHoverCard(stableCoords);
           });
         } else {
+          console.log('✅ Coordinates look stable, positioning now');
           positionHoverCard(coords);
         }
       });
@@ -245,21 +372,32 @@ export function linkHoverPlugin() {
         isPositioning = false;
         return;
       }
-
+      
       const triggerRect = {
         left: coords.left,
-        right: coords.right,
         top: coords.top,
+        right: coords.right,
         bottom: coords.bottom,
         width: coords.right - coords.left,
         height: coords.bottom - coords.top
       } as DOMRect;
       
-      const position = calculateSmartPosition(triggerRect, hovercard, 'bottom', 8);
+      console.log('📐 Trigger rect:', triggerRect);
       
+      // Use smart positioning utility
+      const position = calculateSmartPosition(triggerRect, hovercard, 'bottom', 8);
+      console.log('🎯 Calculated position:', position);
+      
+      // Position the hovercard
       hovercard.style.left = `${position.x}px`;
       hovercard.style.top = `${position.y}px`;
       
+      console.log('📍 Final hovercard position:', {
+        left: hovercard.style.left,
+        top: hovercard.style.top
+      });
+      
+      // Trigger slide-in animation
       requestAnimationFrame(() => {
         if (hovercard) {
           hovercard.style.opacity = '1';
@@ -268,69 +406,112 @@ export function linkHoverPlugin() {
         isPositioning = false;
       });
     }
+    
+    // Add click outside listener
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
   }
 
   function hideHoverCard(): void {
+    console.log('🛑 hideHoverCard called');
     isPositioning = false;
     
     if (hovercard) {
+      // Trigger slide-out animation
       hovercard.style.opacity = '0';
       hovercard.style.transform = 'translateY(-10px)';
       
+      // Hide after animation completes
       setTimeout(() => {
         if (hovercard) {
           hovercard.style.display = 'none';
         }
-      }, 200);
+      }, 200); // Match the transition duration
     }
+    document.removeEventListener('click', handleClickOutside);
+    currentLink = null;
   }
 
-  function handleClickOutside(event: MouseEvent) {
+  function handleClickOutside(event: MouseEvent): void {
+    if (!hovercard) return;
+    
     const target = event.target as HTMLElement;
     
-    if (!hovercard?.contains(target) && !target.closest('a[href]')) {
-      hideHoverCard();
-      currentLink = null;
+    // Don't hide if clicking inside the hovercard
+    if (hovercard.contains(target)) return;
+    
+    // Don't hide if clicking on a link
+    let currentElement: HTMLElement | null = target;
+    while (currentElement && currentElement !== document.body) {
+      if (currentElement.tagName === 'A') {
+        return;
+      }
+      currentElement = currentElement.parentElement;
     }
+    
+    hideHoverCard();
+  }
+
+  function getCurrentView(): EditorView | null {
+    return (window as any).currentEditorView || null;
   }
 
   return new Plugin({
+    view: (editorView) => {
+      (window as any).currentEditorView = editorView;
+      
+      return {
+        update: (view: EditorView) => {
+          const { from } = view.state.selection;
+          const marks = view.state.doc.nodeAt(from)?.marks || [];
+          const linkMark = marks.find(mark => mark.type.name === 'link');
+          
+          if (linkMark) {
+            const href = linkMark.attrs['href'];
+            if (href) {
+              const linkStart = view.state.doc.resolve(from).start();
+              showHoverCard(view, linkStart);
+              return;
+            }
+          }
+          
+          hideHoverCard();
+        },
+        destroy: () => {
+          hideHoverCard();
+          (window as any).currentEditorView = null;
+        }
+      };
+    },
     props: {
       handleDOMEvents: {
-        mouseover: (view, event) => {
+        click: (view: EditorView, event: MouseEvent) => {
           const target = event.target as HTMLElement;
-          const link = target.closest('a[href]') as HTMLAnchorElement;
           
-          if (link && link.href && !link.href.startsWith('#')) {
-            currentLink = link;
-            (link as any).__prosemirrorView = view;
-            showHoverCard(view, view.posAtDOM(link, 0));
+          // Find the clicked link
+          let linkElement: HTMLAnchorElement | null = null;
+          let currentElement: HTMLElement | null = target;
+          
+          while (currentElement && currentElement !== view.dom) {
+            if (currentElement.tagName === 'A') {
+              linkElement = currentElement as HTMLAnchorElement;
+              break;
+            }
+            currentElement = currentElement.parentElement;
           }
-          return false;
-        },
-        mouseout: (view, event) => {
-          const target = event.target as HTMLElement;
-          const link = target.closest('a[href]') as HTMLAnchorElement;
           
-          if (link && currentLink === link) {
-            const relatedTarget = event.relatedTarget as HTMLElement;
-            if (!relatedTarget || !hovercard?.contains(relatedTarget)) {
-              hideHoverCard();
-              currentLink = null;
+          if (linkElement) {
+            const href = linkElement.getAttribute('href');
+            if (href) {
+              const pos = view.posAtDOM(linkElement, 0);
+              if (pos !== null) {
+                currentLink = linkElement;
+                showHoverCard(view, pos);
+              }
             }
           }
-          return false;
-        },
-        click: (view, event) => {
-          const target = event.target as HTMLElement;
-          const link = target.closest('a[href]') as HTMLAnchorElement;
           
-          if (link && link.href && !link.href.startsWith('#')) {
-            if (isEditMode) {
-              event.preventDefault();
-              return true;
-            }
-          }
           return false;
         }
       }
