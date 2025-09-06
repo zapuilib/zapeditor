@@ -14,8 +14,13 @@
       button {
         @apply cursor-pointer rounded-md border-0 bg-transparent px-1 py-0.5 text-zinc-200 outline-0 hover:bg-zinc-400/10;
 
+        &.media__trigger {
+          @apply p-2;
+        }
+        
+
         svg {
-          @apply h-4 w-4;
+          @apply h-3.5 w-3.5;
         }
       }
 
@@ -66,10 +71,10 @@
           }
 
           &.color__dropdown {
-            @apply grid min-w-max grid-cols-6 gap-2 p-2;
+            @apply grid min-w-max grid-cols-9 gap-3 p-2;
 
             .option {
-              @apply flex h-7 w-7 cursor-pointer items-center justify-between rounded-md p-0 hover:bg-zinc-400;
+              @apply flex h-7 w-7 cursor-pointer items-center justify-between rounded-full p-0 hover:bg-zinc-400;
             }
           }
 
@@ -106,6 +111,10 @@
       .tool__dropdown {
         @apply relative px-2;
 
+        &.alt__trigger {
+          @apply p-1.5;
+        }
+
         .trigger {
           @apply flex items-center gap-x-1;
 
@@ -122,10 +131,10 @@
   }
 }
 
+
 .file__input {
   @apply hidden;
 }
-
 
 input {
   @apply border w-full border-zinc-400/10 bg-zinc-900 px-3 py-2 rounded-md text-sm placeholder:text-zinc-600 outline-none focus:border-zinc-200;

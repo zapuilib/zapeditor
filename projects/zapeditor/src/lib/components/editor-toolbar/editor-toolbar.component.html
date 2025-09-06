@@ -33,21 +33,41 @@
       </div>
     </div>
     <div class="tool__group">
-      <button tabindex="0" (click)="undo.emit()" zapEditorTooltip="Undo (Ctrl+Z)">
+      <button
+        tabindex="0"
+        (click)="undo.emit()"
+        zapEditorTooltip="Undo (Ctrl+Z)"
+      >
         <i class="fa-regular fa-arrow-u-turn-up-left"></i>
       </button>
-      <button tabindex="0" (click)="redo.emit()" zapEditorTooltip="Redo (Ctrl+Y)">
+      <button
+        tabindex="0"
+        (click)="redo.emit()"
+        zapEditorTooltip="Redo (Ctrl+Y)"
+      >
         <i class="fa-regular fa-arrow-u-turn-up-right"></i>
       </button>
     </div>
     <div class="tool__group">
-      <button tabindex="0" (click)="bold.emit()" zapEditorTooltip="Bold (Ctrl+B)">
+      <button
+        tabindex="0"
+        (click)="bold.emit()"
+        zapEditorTooltip="Bold (Ctrl+B)"
+      >
         <i class="fa-regular fa-bold"></i>
       </button>
-      <button tabindex="0" (click)="italic.emit()" zapEditorTooltip="Italic (Ctrl+I)">
+      <button
+        tabindex="0"
+        (click)="italic.emit()"
+        zapEditorTooltip="Italic (Ctrl+I)"
+      >
         <i class="fa-regular fa-italic"></i>
       </button>
-      <button tabindex="0" (click)="underline.emit()" zapEditorTooltip="Underline (Ctrl+U)">
+      <button
+        tabindex="0"
+        (click)="underline.emit()"
+        zapEditorTooltip="Underline (Ctrl+U)"
+      >
         <i class="fa-regular fa-underline"></i>
       </button>
       <div class="tool__dropdown__wrapper">
@@ -138,12 +158,17 @@
       </button>
     </div>
     <div class="tool__group">
-      <button tabindex="0" (click)="at.emit()" (keydown.enter)="at.emit()" zapEditorTooltip="Mention">
+      <button
+        tabindex="0"
+        (click)="at.emit()"
+        (keydown.enter)="at.emit()"
+        zapEditorTooltip="Mention"
+      >
         <i class="fa-regular fa-at"></i>
       </button>
       <div class="tool__dropdown__wrapper">
         <button
-          class="tool__dropdown"
+          class="tool__dropdown alt__trigger"
           tabindex="0"
           zapEditorTooltip="Text Color"
           (click)="toggleDropdown('color')"
@@ -172,14 +197,14 @@
       </div>
       <div class="tool__dropdown__wrapper">
         <button
-          class="tool__dropdown"
+          class="tool__dropdown alt__trigger"
           tabindex="0"
           zapEditorTooltip="Insert Link"
           [disabled]="isOnLink()"
           (click)="toggleDropdown('link')"
           (keydown.enter)="toggleDropdown('link')"
         >
-          <div><i class="fa-regular fa-link"></i></div>
+          <div class="trigger"><i class="fa-regular fa-link"></i></div>
         </button>
         @if (showDropdown === 'link') {
         <div class="dropdown__content link__editor">
@@ -202,6 +227,7 @@
         (click)="fileInput.click()"
         (keydown.enter)="fileInput.click()"
         zapEditorTooltip="Upload Media"
+        class="media__trigger"
       >
         <svg
           width="18"
@@ -215,7 +241,11 @@
           />
         </svg>
       </button>
-      <button tabindex="0" (click)="codeBlock.emit()" zapEditorTooltip="Code Block">
+      <button
+        tabindex="0"
+        (click)="codeBlock.emit()"
+        zapEditorTooltip="Code Block"
+      >
         <i class="fa-regular fa-code"></i>
       </button>
       <div class="tool__dropdown__wrapper">
@@ -230,11 +260,7 @@
         @if (showDropdown === 'blocks') {
         <div class="dropdown__content blocks__dropdown">
           <div class="search__wrapper">
-            <input
-              type="text"
-              id="search"
-              placeholder="Search"
-            />
+            <input type="text" id="search" placeholder="Search" />
           </div>
           @for (block of blocks; track $index) {
           <div

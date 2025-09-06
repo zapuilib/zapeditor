@@ -83,10 +83,10 @@
     }
 
     &.color__dropdown {
-      @apply grid min-w-max grid-cols-6 gap-2 p-2;
+      @apply grid min-w-max grid-cols-9 gap-3 p-2;
 
       .inline__toolbar__option {
-        @apply flex h-7 w-7 cursor-pointer items-center justify-between rounded-md p-0 hover:bg-zinc-400;
+        @apply flex h-7 w-7 cursor-pointer items-center justify-between rounded-full p-0 hover:bg-zinc-400;
       }
     }
 
@@ -141,4 +141,10 @@
     opacity: 1;
     transform: translate(-50%, 0) translateY(0);
   }
+}
+
+
+
+.alt__trigger {
+  @apply p-1.5;
 }
