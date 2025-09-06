@@ -317,7 +317,7 @@
 }
 
 .hub__editor__blockquote {
-  @apply py-3 pl-4 italic text-zinc-300 relative;
+  @apply py-3 pl-4 text-zinc-300 relative;
 
   &::before {
     @apply absolute left-0 top-0 h-full w-1 bg-zinc-400/30 rounded-full;
@@ -540,3 +540,30 @@
 
 @import "./plugins/slash/slash.plugin.scss";
 @import "./plugins/media/media.scss";
+
+.zapeditor__tooltip {
+  @apply bg-white text-black px-2 py-1 rounded text-sm font-medium shadow-lg border border-gray-200;
+  max-width: 200px;
+  word-wrap: break-word;
+  z-index: 10001;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  
+  &--entering {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  
+  &--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  &--exiting {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+.hub-tooltip-overlay {
+  z-index: 1000;
+}

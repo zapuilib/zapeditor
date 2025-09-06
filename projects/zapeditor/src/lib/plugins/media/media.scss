@@ -108,6 +108,15 @@
 
 .media__preview__media {
   @apply w-full h-full flex items-center justify-center;
+  
+  img {
+    transition: transform 0.3s ease-in-out;
+    
+    &.zoomed {
+      transform: scale(1.5);
+      cursor: zoom-out;
+    }
+  }
 }
 
 @keyframes spin {

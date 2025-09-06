@@ -9,6 +9,7 @@ import {
   TEXT_FORMATTING_STYLES,
 } from '../../constants';
 import { HubLinkCardComponent } from '../link-card/link-card.component';
+import { zapEditorTooltipDirective } from '../tooltip/tooltip.directive';
 
 @Component({
   selector: 'hub-editor-toolbar',
@@ -17,11 +18,12 @@ import { HubLinkCardComponent } from '../link-card/link-card.component';
     ReactiveFormsModule,
     FormsModule,
     HubLinkCardComponent,
+    zapEditorTooltipDirective,
   ],
   templateUrl: './editor-toolbar.component.html',
   styleUrl: './editor-toolbar.component.scss',
 })
-export class HubEditorToolbar {
+export class ZapEditorToolbar {
   styleChange = output<string>();
   textFormat = output<string>();
   redo = output<void>();

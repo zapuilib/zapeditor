@@ -52,7 +52,7 @@ export function linkHoverPlugin() {
     // Unlink button
     const unlinkBtn = document.createElement('button');
     unlinkBtn.innerHTML = '<i class="fa-regular fa-link-slash"></i>';
-    unlinkBtn.title = 'Remove link';
+    unlinkBtn.setAttribute('zapEditorTooltip', 'Remove link');
     unlinkBtn.className = 'prosemirror__link__card__unlink';
     unlinkBtn.onclick = (e) => {
       e.stopPropagation();
@@ -66,7 +66,7 @@ export function linkHoverPlugin() {
     // New tab button
     const newTabBtn = document.createElement('button');
     newTabBtn.innerHTML = '<i class="fa-regular fa-external-link-alt"></i>';
-    newTabBtn.title = 'Open in new tab';
+    newTabBtn.setAttribute('zapEditorTooltip', 'Open in new tab');
     newTabBtn.className = 'prosemirror__link__card__newtab';
     newTabBtn.onclick = (e) => {
       e.stopPropagation();
@@ -164,6 +164,8 @@ export function linkHoverPlugin() {
     
     hovercard.classList.remove('prosemirror__link__card__edit');
     isEditMode = false;
+    
+    initializeTooltips(hovercard);
   }
 
   function showEditMode(): void {
@@ -175,6 +177,27 @@ export function linkHoverPlugin() {
     
     hovercard.classList.add('prosemirror__link__card__edit');
     isEditMode = true;
+  }
+
+  function initializeTooltips(container: HTMLElement) {
+    import('../../services/tooltip.service').then(({ TooltipService }) => {
+      const tooltipService = new TooltipService();
+      
+      const elementsWithTooltips = container.querySelectorAll('[zapEditorTooltip]');
+      
+      elementsWithTooltips.forEach((element) => {
+        const tooltipText = element.getAttribute('zapEditorTooltip');
+        if (tooltipText) {
+          const cleanupFn = tooltipService.createTooltip({
+            text: tooltipText,
+            delay: 500,
+            element: element as HTMLElement
+          });
+          
+          (element as any).__tooltipCleanup = cleanupFn;
+        }
+      });
+    });
   }
 
   function removeLink(): void {
@@ -418,6 +441,13 @@ export function linkHoverPlugin() {
     isPositioning = false;
     
     if (hovercard) {
+      const elementsWithTooltips = hovercard.querySelectorAll('[zapEditorTooltip]');
+      elementsWithTooltips.forEach((element) => {
+        if ((element as any).__tooltipCleanup) {
+          (element as any).__tooltipCleanup();
+        }
+      });
+
       // Trigger slide-out animation
       hovercard.style.opacity = '0';
       hovercard.style.transform = 'translateY(-10px)';

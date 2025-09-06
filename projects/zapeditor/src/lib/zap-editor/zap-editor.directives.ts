@@ -433,6 +433,36 @@ export class BaseEditor {
             setBlockType(state.schema.nodes['heading'], { level: 6 })(state, dispatch, view),
           'Mod-Shift-x': toggleMark(this.schema.marks.strike),
           'Mod-Shift-c': toggleMark(this.schema.marks.code),
+          'Enter': (state, dispatch, view) => {
+            const { $from } = state.selection;
+            const parent = $from.parent;
+            
+            // Check if we're in a blockquote
+            if (parent.type.name === 'blockquote') {
+              const isEmpty = parent.textContent.trim() === '';
+              const isAtStart = $from.parentOffset === 0;
+              
+              // If blockquote is empty and we're at the start, exit the blockquote
+              if (isEmpty && isAtStart) {
+                const pos = $from.pos;
+                const start = $from.start();
+                const end = $from.end();
+                const blockquoteSize = $from.parent.nodeSize;
+                
+                // Replace blockquote with paragraph
+                const paragraph = state.schema.nodes['paragraph'];
+                const paragraphNode = paragraph.create();
+                
+                const tr = state.tr.replaceWith(start - 1, start - 1 + blockquoteSize, paragraphNode);
+                tr.setSelection(TextSelection.near(tr.doc.resolve(start - 1)));
+                if (dispatch) dispatch(tr);
+                if (view) view.focus();
+                return true;
+              }
+            }
+            
+            return false;
+          },
           'Mod-Shift-s': toggleMark(this.schema.marks.sup),
           'Mod-Shift-b': toggleMark(this.schema.marks.sub),
           '@': (state, dispatch, view) => {

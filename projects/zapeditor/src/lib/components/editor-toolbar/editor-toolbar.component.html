@@ -5,6 +5,7 @@
         <button
           class="tool__dropdown"
           tabindex="0"
+          zapEditorTooltip="Block Style"
           (click)="toggleDropdown('block_style')"
           (keydown.enter)="toggleDropdown('block_style')"
         >
@@ -32,26 +33,27 @@
       </div>
     </div>
     <div class="tool__group">
-      <button tabindex="0" (click)="undo.emit()">
+      <button tabindex="0" (click)="undo.emit()" zapEditorTooltip="Undo (Ctrl+Z)">
         <i class="fa-regular fa-arrow-u-turn-up-left"></i>
       </button>
-      <button tabindex="0" (click)="redo.emit()">
+      <button tabindex="0" (click)="redo.emit()" zapEditorTooltip="Redo (Ctrl+Y)">
         <i class="fa-regular fa-arrow-u-turn-up-right"></i>
       </button>
     </div>
     <div class="tool__group">
-      <button tabindex="0" (click)="bold.emit()">
+      <button tabindex="0" (click)="bold.emit()" zapEditorTooltip="Bold (Ctrl+B)">
         <i class="fa-regular fa-bold"></i>
       </button>
-      <button tabindex="0" (click)="italic.emit()">
+      <button tabindex="0" (click)="italic.emit()" zapEditorTooltip="Italic (Ctrl+I)">
         <i class="fa-regular fa-italic"></i>
       </button>
-      <button tabindex="0" (click)="underline.emit()">
+      <button tabindex="0" (click)="underline.emit()" zapEditorTooltip="Underline (Ctrl+U)">
         <i class="fa-regular fa-underline"></i>
       </button>
       <div class="tool__dropdown__wrapper">
         <button
           tabindex="0"
+          zapEditorTooltip="Text Formatting"
           (click)="toggleDropdown('text_formatting')"
           class="tool__dropdown !px-0"
         >
@@ -80,6 +82,7 @@
         tabindex="0"
         (click)="align.emit('left')"
         (keydown.enter)="align.emit('left')"
+        zapEditorTooltip="Align Left"
       >
         <i class="fa-regular fa-align-left"></i>
       </button>
@@ -87,6 +90,7 @@
         tabindex="0"
         (click)="align.emit('center')"
         (keydown.enter)="align.emit('center')"
+        zapEditorTooltip="Align Center"
       >
         <i class="fa-regular fa-align-center"></i>
       </button>
@@ -94,6 +98,7 @@
         tabindex="0"
         (click)="align.emit('right')"
         (keydown.enter)="align.emit('right')"
+        zapEditorTooltip="Align Right"
       >
         <i class="fa-regular fa-align-right"></i>
       </button>
@@ -101,6 +106,7 @@
         tabindex="0"
         (click)="align.emit('justify')"
         (keydown.enter)="align.emit('justify')"
+        zapEditorTooltip="Justify"
       >
         <i class="fa-regular fa-align-justify"></i>
       </button>
@@ -110,6 +116,7 @@
         tabindex="0"
         (click)="list.emit('bullet')"
         (keydown.enter)="list.emit('bullet')"
+        zapEditorTooltip="Bullet List"
       >
         <i class="fa-regular fa-list-ul"></i>
       </button>
@@ -117,6 +124,7 @@
         tabindex="0"
         (click)="list.emit('numbered')"
         (keydown.enter)="list.emit('numbered')"
+        zapEditorTooltip="Numbered List"
       >
         <i class="fa-regular fa-list-ol"></i>
       </button>
@@ -124,18 +132,20 @@
         tabindex="0"
         (click)="list.emit('todo')"
         (keydown.enter)="list.emit('todo')"
+        zapEditorTooltip="Todo List"
       >
         <i class="fa-regular fa-list-check"></i>
       </button>
     </div>
     <div class="tool__group">
-      <button tabindex="0" (click)="at.emit()" (keydown.enter)="at.emit()">
+      <button tabindex="0" (click)="at.emit()" (keydown.enter)="at.emit()" zapEditorTooltip="Mention">
         <i class="fa-regular fa-at"></i>
       </button>
       <div class="tool__dropdown__wrapper">
         <button
           class="tool__dropdown"
           tabindex="0"
+          zapEditorTooltip="Text Color"
           (click)="toggleDropdown('color')"
           (keydown.enter)="toggleDropdown('color')"
         >
@@ -164,6 +174,7 @@
         <button
           class="tool__dropdown"
           tabindex="0"
+          zapEditorTooltip="Insert Link"
           [disabled]="isOnLink()"
           (click)="toggleDropdown('link')"
           (keydown.enter)="toggleDropdown('link')"
@@ -190,6 +201,7 @@
         tabindex="0"
         (click)="fileInput.click()"
         (keydown.enter)="fileInput.click()"
+        zapEditorTooltip="Upload Media"
       >
         <svg
           width="18"
@@ -203,12 +215,13 @@
           />
         </svg>
       </button>
-      <button tabindex="0" (click)="codeBlock.emit()">
+      <button tabindex="0" (click)="codeBlock.emit()" zapEditorTooltip="Code Block">
         <i class="fa-regular fa-code"></i>
       </button>
       <div class="tool__dropdown__wrapper">
         <button
           tabindex="0"
+          zapEditorTooltip="More Blocks"
           (click)="toggleDropdown('blocks')"
           (keydown.enter)="toggleDropdown('blocks')"
         >

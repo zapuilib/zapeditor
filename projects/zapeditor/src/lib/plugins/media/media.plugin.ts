@@ -119,10 +119,12 @@ class MediaNodeView implements NodeView {
     if (this.mediaType === 'image' || this.mediaType === 'video') {
       const leftResizeHandle = document.createElement('div');
       leftResizeHandle.className = 'media__resize__handle media__resize__handle--left';
+      leftResizeHandle.setAttribute('zapEditorTooltip', 'Resize');
       container.appendChild(leftResizeHandle);
 
       const rightResizeHandle = document.createElement('div');
       rightResizeHandle.className = 'media__resize__handle media__resize__handle--right';
+      rightResizeHandle.setAttribute('zapEditorTooltip', 'Resize');
       container.appendChild(rightResizeHandle);
     }
 
@@ -153,6 +155,8 @@ class MediaNodeView implements NodeView {
     toolbar.appendChild(deleteBtn);
 
     container.appendChild(toolbar);
+
+    this.initializeTooltips(container);
 
     container.addEventListener('mouseenter', () => {
       if (this.mediaType === 'image' || this.mediaType === 'video') {
@@ -295,13 +299,34 @@ class MediaNodeView implements NodeView {
 
   private createToolbarButton(iconClass: string, title: string): HTMLElement {
     const button = document.createElement('button');
-    button.title = title;
+    button.setAttribute('zapEditorTooltip', title);
     
     const icon = document.createElement('i');
     icon.className = `fa-regular ${iconClass}`;
     button.appendChild(icon);
     
     return button;
+  }
+
+  private initializeTooltips(container: HTMLElement) {
+    import('../../services/tooltip.service').then(({ TooltipService }) => {
+      const tooltipService = new TooltipService();
+      
+      const elementsWithTooltips = container.querySelectorAll('[zapEditorTooltip]');
+      
+      elementsWithTooltips.forEach((element) => {
+        const tooltipText = element.getAttribute('zapEditorTooltip');
+        if (tooltipText) {
+          const cleanupFn = tooltipService.createTooltip({
+            text: tooltipText,
+            delay: 500,
+            element: element as HTMLElement
+          });
+          
+          (element as any).__tooltipCleanup = cleanupFn;
+        }
+      });
+    });
   }
 
   private startResize(e: MouseEvent, direction: 'left' | 'right') {
@@ -368,10 +393,12 @@ class MediaNodeView implements NodeView {
     const closeBtn = document.createElement('button');
     closeBtn.className = 'media__preview__close';
     closeBtn.innerHTML = '<i class="fa-regular fa-times"></i>';
+    closeBtn.setAttribute('zapEditorTooltip', 'Close');
 
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'media__preview__download';
     downloadBtn.innerHTML = '<i class="fa-regular fa-download"></i>';
+    downloadBtn.setAttribute('zapEditorTooltip', 'Download');
 
     const mediaContainer = document.createElement('div');
     mediaContainer.className = 'media__preview__media';
@@ -381,7 +408,13 @@ class MediaNodeView implements NodeView {
       mediaElement = document.createElement('img');
       (mediaElement as HTMLImageElement).src = this.mediaUrl;
       (mediaElement as HTMLImageElement).alt = this.mediaAlt;
-      mediaElement.className = 'w-full h-full object-contain block';
+      mediaElement.className = 'w-full h-full object-contain block cursor-zoom-in';
+      
+      // Add click-to-zoom functionality for images
+      mediaElement.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleImageZoom(mediaElement as HTMLImageElement);
+      });
     } else {
       mediaElement = document.createElement('video');
       (mediaElement as HTMLVideoElement).src = this.mediaUrl;
@@ -416,12 +449,39 @@ class MediaNodeView implements NodeView {
 
     document.body.appendChild(modal);
 
+    this.initializeTooltips(modal);
+
     document.body.style.overflow = 'hidden';
   }
 
   private closePreviewModal(modal: HTMLElement) {
+    const elementsWithTooltips = modal.querySelectorAll('[zapEditorTooltip]');
+    elementsWithTooltips.forEach((element) => {
+      if ((element as any).__tooltipCleanup) {
+        (element as any).__tooltipCleanup();
+      }
+    });
+
     modal.remove();
     document.body.style.overflow = '';
+  }
+
+  private toggleImageZoom(imgElement: HTMLImageElement) {
+    const isZoomed = imgElement.classList.contains('zoomed');
+    
+    if (isZoomed) {
+      // Reset zoom
+      imgElement.classList.remove('zoomed');
+      imgElement.classList.add('cursor-zoom-in');
+      imgElement.style.transform = 'scale(1)';
+      imgElement.style.cursor = 'zoom-in';
+    } else {
+      // Apply zoom
+      imgElement.classList.add('zoomed');
+      imgElement.classList.remove('cursor-zoom-in');
+      imgElement.style.transform = 'scale(1.5)';
+      imgElement.style.cursor = 'zoom-out';
+    }
   }
 
   private onDownload() {
@@ -459,6 +519,13 @@ class MediaNodeView implements NodeView {
   }
 
   destroy() {
+    const elementsWithTooltips = this.dom.querySelectorAll('[zapEditorTooltip]');
+    elementsWithTooltips.forEach((element) => {
+      if ((element as any).__tooltipCleanup) {
+        (element as any).__tooltipCleanup();
+      }
+    });
+
     if (this.mediaUrl) {
       URL.revokeObjectURL(this.mediaUrl);
     }

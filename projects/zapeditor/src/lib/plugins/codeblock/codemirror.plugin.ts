@@ -280,7 +280,7 @@ class CodeBlockView {
     const wrapBtn = document.createElement('button');
     wrapBtn.className = 'wrap-btn';
     wrapBtn.innerHTML = '<i class="fa-regular fa-arrows-up-down-left-right"></i>';
-    wrapBtn.title = 'Toggle code block wrap';
+    wrapBtn.setAttribute('zapEditorTooltip', 'Toggle code block wrap');
 
     wrapBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -291,7 +291,7 @@ class CodeBlockView {
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-btn';
     deleteBtn.innerHTML = '<i class="fa-regular fa-trash"></i>';
-    deleteBtn.title = 'Delete code block';
+    deleteBtn.setAttribute('zapEditorTooltip', 'Delete code block');
 
     deleteBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -302,6 +302,29 @@ class CodeBlockView {
     actionsContainer.appendChild(wrapBtn);
     actionsContainer.appendChild(deleteBtn);
     toolbarContent.appendChild(actionsContainer);
+
+    this.initializeTooltips(wrapBtn, deleteBtn);
+  }
+
+  private initializeTooltips(wrapBtn: HTMLElement, deleteBtn: HTMLElement) {
+    import('../../services/tooltip.service').then(({ TooltipService }) => {
+      const tooltipService = new TooltipService();
+      
+      const wrapTooltip = tooltipService.createTooltip({
+        text: 'Wrap',
+        delay: 500,
+        element: wrapBtn
+      });
+      
+      const deleteTooltip = tooltipService.createTooltip({
+        text: 'Delete',
+        delay: 500,
+        element: deleteBtn
+      });
+
+      (wrapBtn as any).__tooltipCleanup = wrapTooltip;
+      (deleteBtn as any).__tooltipCleanup = deleteTooltip;
+    });
   }
 
   private changeLanguage(language: string) {
@@ -621,6 +644,25 @@ class CodeBlockView {
   }
   stopEvent() {
     return true;
+  }
+
+  destroy() {
+    // Cleanup tooltips
+    const wrapBtn = this.dom.querySelector('.wrap-btn') as HTMLElement;
+    const deleteBtn = this.dom.querySelector('.delete-btn') as HTMLElement;
+    
+    if (wrapBtn && (wrapBtn as any).__tooltipCleanup) {
+      (wrapBtn as any).__tooltipCleanup();
+    }
+    
+    if (deleteBtn && (deleteBtn as any).__tooltipCleanup) {
+      (deleteBtn as any).__tooltipCleanup();
+    }
+
+    // Cleanup CodeMirror
+    if (this.cm) {
+      this.cm.destroy();
+    }
   }
 }
 

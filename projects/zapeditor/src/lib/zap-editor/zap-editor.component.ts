@@ -13,26 +13,26 @@ import {
   ViewChild,
   effect,
 } from '@angular/core';
+import { OverlayModule } from '@angular/cdk/overlay';
 import { setBlockType, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
 import { EditorView } from 'prosemirror-view';
 import { wrapInList, liftListItem } from 'prosemirror-schema-list';
 import { TextSelection } from 'prosemirror-state';
 
-import { HubEditorToolbar, InlineToolbarComponent } from '../components';
-import { calculateSmartPosition } from '../utils/smart-positioning.util';
+import { ZapEditorToolbar, InlineToolbarComponent } from '../components';
 
 export interface MediaUploadEvent {
   file: File;
   type: 'image' | 'video' | 'document';
   url: string;
 }
-import { BaseEditor } from './hub-editor.directives';
+import { BaseEditor } from './zap-editor.directives';
 import { MentionUser } from '../interfaces';
 
 @Component({
   selector: 'zap-editor',
-  imports: [HubEditorToolbar, InlineToolbarComponent],
+  imports: [ZapEditorToolbar, InlineToolbarComponent, OverlayModule],
   template: ` <div class="wysiwyg__editor__wrapper">
     @if (toolbar() === 'default') {
     <hub-editor-toolbar
@@ -92,7 +92,7 @@ import { MentionUser } from '../interfaces';
     ></inline-toolbar>
     }
   </div>`,
-  styleUrl: './hub-editor.component.scss',
+  styleUrl: './zap-editor.component.scss',
 })
 export class ZapEditor extends BaseEditor implements AfterViewInit {
   @ViewChild('editor') editor!: ElementRef<HTMLDivElement>;
