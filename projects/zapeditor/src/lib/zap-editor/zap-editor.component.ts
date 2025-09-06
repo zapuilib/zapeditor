@@ -329,20 +329,15 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     }
 
     let hasMediaNode = false;
-    let hasDividerNode = false;
     state.doc.nodesBetween(from, to, (node) => {
       if (node.type.name === 'media') {
         hasMediaNode = true;
         return false;
       }
-      if (node.type.name === 'horizontal_rule') {
-        hasDividerNode = true;
-        return false;
-      }
       return true;
     });
 
-    if (hasMediaNode || hasDividerNode) {
+    if (hasMediaNode) {
       this.showInlineToolbar.set(false);
       return;
     }

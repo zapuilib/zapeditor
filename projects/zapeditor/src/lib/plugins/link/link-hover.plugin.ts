@@ -10,6 +10,8 @@ export function linkHoverPlugin() {
   let currentLink: HTMLAnchorElement | null = null;
   let isEditMode = false;
   let isPositioning = false;
+  let hideTimeout: number | null = null;
+  let showTimeout: number | null = null;
 
   function createHoverCard(): HTMLElement {
     const card = document.createElement('div');
@@ -440,6 +442,16 @@ export function linkHoverPlugin() {
     console.log('🛑 hideHoverCard called');
     isPositioning = false;
     
+    // Clear any pending timeouts
+    if (hideTimeout) {
+      clearTimeout(hideTimeout);
+      hideTimeout = null;
+    }
+    if (showTimeout) {
+      clearTimeout(showTimeout);
+      showTimeout = null;
+    }
+    
     if (hovercard) {
       const elementsWithTooltips = hovercard.querySelectorAll('[zapEditorTooltip]');
       elementsWithTooltips.forEach((element) => {
@@ -483,6 +495,107 @@ export function linkHoverPlugin() {
     hideHoverCard();
   }
 
+  function showHoverCardOnLinkHover(event: MouseEvent, linkElement: HTMLAnchorElement): void {
+    console.log('🚀 showHoverCardOnLinkHover called');
+    
+    // Clear any pending hide timeout
+    if (hideTimeout) {
+      clearTimeout(hideTimeout);
+      hideTimeout = null;
+    }
+    
+    if (isPositioning) {
+      console.log('⏸️ Already positioning, skipping...');
+      return;
+    }
+    
+    if (!hovercard) {
+      hovercard = createHoverCard();
+      document.body.appendChild(hovercard);
+      
+      // Add mouse event listeners to the hover card itself for tight hover area
+      hovercard.addEventListener('mouseenter', () => {
+        console.log('🖱️ Mouse entered hover card');
+        // Clear any pending hide timeout when mouse enters hover card
+        if (hideTimeout) {
+          clearTimeout(hideTimeout);
+          hideTimeout = null;
+        }
+      });
+      
+      hovercard.addEventListener('mouseleave', () => {
+        console.log('🖱️ Mouse left hover card');
+        // Hide when mouse leaves hover card with small delay
+        hideTimeout = window.setTimeout(() => {
+          console.log('⏰ Hiding hover card after delay');
+          hideHoverCard();
+        }, 200); // Increased delay
+      });
+    }
+    
+    isPositioning = true;
+    currentLink = linkElement;
+    
+    // Show normal mode first to get proper dimensions
+    showNormalMode();
+    
+    // Position the hovercard off-screen initially to get dimensions
+    hovercard.style.left = '-9999px';
+    hovercard.style.top = '-9999px';
+    hovercard.style.display = 'flex';
+    
+    // Wait for the hovercard to be rendered and get its dimensions
+    requestAnimationFrame(() => {
+      if (!hovercard) {
+        isPositioning = false;
+        return;
+      }
+      
+      // Use the link element's bounding rectangle for tight positioning
+      const rect = linkElement.getBoundingClientRect();
+      const coords = {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+      
+      console.log('🔗 Using link element coords for tight positioning:', coords);
+      positionHoverCardTight(coords);
+    });
+  }
+
+  function positionHoverCardTight(coords: any) {
+    if (!hovercard) {
+      isPositioning = false;
+      return;
+    }
+    
+    const triggerRect = {
+      left: coords.left,
+      top: coords.top,
+      right: coords.right,
+      bottom: coords.bottom,
+      width: coords.right - coords.left,
+      height: coords.bottom - coords.top,
+      x: coords.left,
+      y: coords.top
+    } as DOMRect;
+    
+    // Position very close to the link (2px gap)
+    const position = calculateSmartPosition(triggerRect, hovercard, 'bottom', 0);
+    
+    hovercard.style.left = `${position.x}px`;
+    hovercard.style.top = `${position.y}px`;
+    hovercard.style.display = 'flex';
+    hovercard.style.opacity = '1';
+    hovercard.style.transform = 'translateY(0)';
+    
+    isPositioning = false;
+  }
+
   function getCurrentView(): EditorView | null {
     return (window as any).currentEditorView || null;
   }
@@ -490,25 +603,88 @@ export function linkHoverPlugin() {
   return new Plugin({
     view: (editorView) => {
       (window as any).currentEditorView = editorView;
+      const editorElement = editorView.dom;
+      
+      const handleMouseMove = (event: MouseEvent) => {
+        // Clear any pending hide timeout
+        if (hideTimeout) {
+          clearTimeout(hideTimeout);
+          hideTimeout = null;
+        }
+        
+        const target = event.target as HTMLElement;
+        
+        // Check if mouse is over the hover card itself - don't do anything
+        if (hovercard && hovercard.contains(target)) {
+          console.log('🖱️ Mouse over hover card, keeping it visible');
+          return; // Don't hide if mouse is over the hover card
+        }
+        
+        // Find the link element under the mouse
+        let linkElement: HTMLAnchorElement | null = null;
+        let currentElement: HTMLElement | null = target;
+        
+        while (currentElement && currentElement !== editorElement) {
+          if (currentElement.tagName === 'A') {
+            linkElement = currentElement as HTMLAnchorElement;
+            break;
+          }
+          currentElement = currentElement.parentElement;
+        }
+        
+        if (linkElement) {
+          const href = linkElement.getAttribute('href');
+          if (href) {
+            console.log('🔗 Mouse over link, showing hover card');
+            currentLink = linkElement;
+            // Clear any pending show timeout
+            if (showTimeout) {
+              clearTimeout(showTimeout);
+            }
+            // Show immediately when over link
+            showHoverCardOnLinkHover(event, linkElement);
+          }
+        } else {
+          // Only hide if we're not currently showing a hover card
+          // or if we're not over the current link
+          if (hovercard && (!currentLink || !currentLink.contains(target))) {
+            // Double check that mouse is not over the hover card
+            if (!hovercard.contains(target)) {
+              console.log('🚫 Mouse not over link or hover card, scheduling hide');
+              // Add small delay before hiding to allow mouse to move to hover card
+              hideTimeout = window.setTimeout(() => {
+                hideHoverCard();
+              }, 150); // Increased delay
+            } else {
+              console.log('🖱️ Mouse over hover card, not hiding');
+            }
+          }
+        }
+      };
+      
+      const handleMouseLeave = () => {
+        // Add small delay before hiding
+        hideTimeout = window.setTimeout(() => {
+          hideHoverCard();
+        }, 150);
+      };
+      
+      // Add event listeners
+      editorElement.addEventListener('mousemove', handleMouseMove);
+      editorElement.addEventListener('mouseleave', handleMouseLeave);
       
       return {
         update: (view: EditorView) => {
-          const { from } = view.state.selection;
-          const marks = view.state.doc.nodeAt(from)?.marks || [];
-          const linkMark = marks.find(mark => mark.type.name === 'link');
-          
-          if (linkMark) {
-            const href = linkMark.attrs['href'];
-            if (href) {
-              const linkStart = view.state.doc.resolve(from).start();
-              showHoverCard(view, linkStart);
-              return;
-            }
+          // Hide hover card during text selection
+          if (view.state.selection.from !== view.state.selection.to) {
+            hideHoverCard();
+            return;
           }
-          
-          hideHoverCard();
         },
         destroy: () => {
+          // Clean up event listeners
+          editorElement.removeEventListener('mousemove', handleMouseMove);
+          editorElement.removeEventListener('mouseleave', handleMouseLeave);
           hideHoverCard();
           (window as any).currentEditorView = null;
         }
@@ -534,11 +710,9 @@ export function linkHoverPlugin() {
           if (linkElement) {
             const href = linkElement.getAttribute('href');
             if (href) {
-              const pos = view.posAtDOM(linkElement, 0);
-              if (pos !== null) {
-                currentLink = linkElement;
-                showHoverCard(view, pos);
-              }
+              currentLink = linkElement;
+              // Use mouse position for click too
+              showHoverCardOnLinkHover(event, linkElement);
             }
           }
           
