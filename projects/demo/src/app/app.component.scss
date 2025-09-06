@@ -11,7 +11,7 @@
 }
 
 .demo__editor {
-  @apply max-w-[65rem] mx-auto mt-8 w-full rounded-t-xl overflow-auto h-[70.5vh];
+  @apply max-w-[65rem] mx-auto mt-8 w-full rounded-xl overflow-auto h-[70.5vh];
 
   zap-editor {
     @apply h-full;

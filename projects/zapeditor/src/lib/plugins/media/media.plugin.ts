@@ -119,12 +119,10 @@ class MediaNodeView implements NodeView {
     if (this.mediaType === 'image' || this.mediaType === 'video') {
       const leftResizeHandle = document.createElement('div');
       leftResizeHandle.className = 'media__resize__handle media__resize__handle--left';
-      leftResizeHandle.setAttribute('zapEditorTooltip', 'Resize');
       container.appendChild(leftResizeHandle);
 
       const rightResizeHandle = document.createElement('div');
       rightResizeHandle.className = 'media__resize__handle media__resize__handle--right';
-      rightResizeHandle.setAttribute('zapEditorTooltip', 'Resize');
       container.appendChild(rightResizeHandle);
     }
 

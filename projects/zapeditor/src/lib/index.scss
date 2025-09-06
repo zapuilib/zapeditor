@@ -330,9 +330,8 @@
 }
 
 .mention {
-  @apply inline-block whitespace-nowrap rounded-full bg-indigo-600 px-2 py-1 text-xs font-medium text-white cursor-default;
-  @apply border border-indigo-500/30 shadow-sm;
-  @apply transition-all duration-200 hover:bg-indigo-500 hover:shadow-md;
+  @apply inline-block whitespace-nowrap rounded-full bg-white px-2 py-1 text-xs font-medium text-black cursor-default;
+  @apply transition-all duration-200 hover:bg-white hover:shadow-md;
 
   &::before {
     @apply text-white;
@@ -344,10 +343,10 @@
 }
 
 .mention__suggestion {
-  @apply flex cursor-pointer items-center gap-3 px-3 py-[5px] transition-colors duration-150 ease-in-out;
+  @apply flex cursor-pointer items-center gap-3 px-3 py-[5px] rounded-md transition-colors duration-150 ease-in-out;
 
   &__active {
-    @apply bg-zinc-800;
+    @apply bg-zinc-800 transition-all;
   }
 }
 
