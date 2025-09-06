@@ -1,33 +1,29 @@
 <div class="demo__container">
-  <div class="demo__section">
-    <h2>Zap text editor with Value & onChange Support</h2>
-
-    <!-- Control buttons -->
-    <div class="btn-grp">
-      <button
-        [class.active]="toolbar() === 'inline'"
-        (click)="setToolbar('inline')"
-      >
-        Inline
-      </button>
-      <button
-        [class.active]="toolbar() === 'default'"
-        (click)="setToolbar('default')"
-      >
-        Top
-      </button>
+  <div class="header">
+    <h1 class="header__title">Production ready, modern, fast and flexible editor</h1>
+  </div>
+  <div class="demo__controls">
+    <div class="toolbar__selector">
+      <div class="btn__group">
+        <button
+          class="btn__toggle"
+          [class.active]="toolbar() === 'inline'"
+          (click)="setToolbar('inline')"
+        >
+          Inline Toolbar
+        </button>
+        <button
+          class="btn__toggle"
+          [class.active]="toolbar() === 'default'"
+          (click)="setToolbar('default')"
+        >
+          Top Toolbar
+        </button>
+      </div>
     </div>
-<!-- 
-    <button (click)="loadExampleContent()">Load Example Content</button>
-    <button (click)="clearEditor()">Clear Editor</button>
-    <button (click)="getEditorContent()">Get Content</button>
-    <button (click)="testContentChange()">Test Content Change</button>
-    <button (click)="toggleAutoSave()" [class.active]="autoSave()">
-      {{ autoSave() ? 'Disable' : 'Enable' }} Auto-Save
-    </button>
-    <button (click)="clearLocalStorage()">Clear LocalStorage</button> -->
+  </div>
 
-    <!-- Editor -->
+  <div class="demo__editor">
     <zap-editor
       #defaultEditor
       [toolbar]="toolbar()"
@@ -38,16 +34,5 @@
       (onChange)="onEditorChange($event)"
     >
     </zap-editor>
-
-    <!-- Content preview -->
-    <div class="demo__preview">
-      <h3>Content Preview (JSON)</h3>
-      <div class="mb-4">
-        <strong>Content Length:</strong> {{ editorValue().length }} characters
-        <br />
-        <strong>Last Updated:</strong> {{ lastUpdated() }}
-      </div>
-      <pre>{{ editorValue() | json }}</pre>
-    </div>
   </div>
 </div>

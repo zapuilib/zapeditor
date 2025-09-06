@@ -1,7 +1,7 @@
 @import "prosemirror-view/style/prosemirror.css";
 
 .ProseMirror {
-  @apply relative min-h-20 px-8 py-6 focus:outline-none;
+  @apply relative px-8 py-6 bg-zinc-950 focus:outline-none min-h-full;
 
   &.drag-over {
     @apply border-2 border-dashed border-blue-500 bg-blue-500/5;
@@ -12,6 +12,14 @@
   }
 
   h1 {
+    @apply text-3xl font-medium mb-3;
+
+    strong {
+      @apply text-3xl;
+    }
+  }
+
+  h2 {
     @apply text-2xl font-medium mb-3;
 
     strong {
@@ -20,14 +28,6 @@
   }
 
   h3 {
-    @apply text-lg font-medium mb-3;
-
-    strong {
-      @apply text-lg;
-    }
-  }
-
-  h2 {
     @apply text-xl font-medium mb-3;
 
     strong {
@@ -36,6 +36,14 @@
   }
 
   h4 {
+    @apply text-lg font-medium mb-3;
+
+    strong {
+      @apply text-lg;
+    }
+  }
+
+  h5 {
     @apply text-base font-medium mb-3;
 
     strong {
@@ -43,19 +51,11 @@
     }
   }
 
-  h5 {
+  h6 {
     @apply text-sm font-medium mb-3;
 
     strong {
       @apply text-sm;
-    }
-  }
-
-  h6 {
-    @apply text-xs font-medium mb-3;
-
-    strong {
-      @apply text-xs;
     }
   }
 

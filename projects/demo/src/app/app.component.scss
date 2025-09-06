@@ -1,53 +1,35 @@
 .demo__container {
-  @apply max-w-screen-2xl mx-auto p-6 space-y-8;
+  @apply h-screen md:p-8 overflow-hidden;
+}
 
-  .btn-grp {
-    @apply flex flex-wrap gap-2 mb-4;
+.header {
+  @apply text-center my-8;
 
-    button {
-      @apply px-4 py-2 text-zinc-200 border-b border-zinc-700 transition hover:transform hover:-translate-y-0.5 hover:bg-zinc-800;
-
-      &.active {
-        @apply border-indigo-600 text-indigo-400;
-      }
-    }
-  }
-
-  button {
-    @apply px-4 py-2 bg-zinc-700 text-zinc-200 border border-zinc-600 rounded transition hover:bg-zinc-600 hover:border-zinc-500 mr-2 mb-2;
-
-    &.active {
-      @apply bg-indigo-600 border-indigo-500 text-white;
-    }
-  }
-
-  .demo__controls {
-    @apply bg-zinc-800 p-6 rounded-lg border border-zinc-700 mb-6;
-
-    h3 {
-      @apply mt-0 text-zinc-200 mb-4;
-    }
-
-    ul {
-      @apply my-4 pl-5;
-    }
-
-    li {
-      @apply my-2 text-zinc-300;
-    }
-  }
-
-  .demo__preview {
-    @apply mt-6 bg-zinc-800 p-6 rounded-lg border border-zinc-700;
-
-    h3 {
-      @apply mt-0 text-zinc-200 mb-4;
-    }
-
-    pre {
-      @apply bg-zinc-900 p-4 rounded border border-zinc-600 overflow-x-auto text-xs leading-relaxed max-h-80 overflow-y-auto text-zinc-200;
-    }
+  h1 {
+    @apply text-[3.13rem] leading-tight font-bold text-zinc-200 mb-2 max-w-2xl mx-auto tracking-tighter;
   }
 }
 
+.demo__editor {
+  @apply max-w-[65rem] mx-auto mt-8 w-full rounded-t-xl overflow-auto h-[70.5vh];
 
+  zap-editor {
+    @apply h-full;
+  }
+}
+
+.demo__controls {
+  @apply flex items-center justify-center w-full text-center mb-4 mt-10;
+
+  .btn__group {
+    @apply inline-flex rounded-md border border-zinc-400/20 bg-zinc-950 p-1;
+
+    button {
+      @apply cursor-pointer bg-transparent px-4 py-1 text-sm text-zinc-200 transition-all hover:text-zinc-100;
+
+      &.active {
+        @apply bg-zinc-100 rounded-md text-zinc-950;
+      }
+    }
+  }
+}
