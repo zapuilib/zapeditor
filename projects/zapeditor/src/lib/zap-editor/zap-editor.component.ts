@@ -1429,9 +1429,9 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         const img = new Image();
 
         img.onload = () => {
-          const maxWidth = 800; // Max width of editor
-          const maxHeight = 600; // Max height of editor
-
+          const maxWidth = 800;
+          const maxHeight = 600;
+          
           let width = img.naturalWidth;
           let height = img.naturalHeight;
 
@@ -1510,16 +1510,16 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     state.doc.descendants((node, pos) => {
       if (node.type.name === 'media' && node.attrs['uploading'] === true) {
         mediaPos = pos;
-        return false; // Stop searching
+        return false;
       }
-      return true; // Continue searching
+      return true; 
     });
 
     if (mediaPos !== -1) {
       const tr = state.tr.setNodeMarkup(mediaPos, undefined, {
         ...state.doc.nodeAt(mediaPos)?.attrs,
-        src: uploadedUrl, // Update with real uploaded URL
-        uploading: false, // Mark as completed
+        src: uploadedUrl,
+        uploading: false,
       });
       this.editorView.dispatch(tr);
     }

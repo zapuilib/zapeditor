@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { HubLinkCardComponent } from '../link-card/link-card.component';
+import { ZeLinkCardComponent } from '../link-card/link-card.component';
 import { zapEditorTooltipDirective } from '../tooltip/tooltip.directive';
 import {
   BLOCK_STYLES,
@@ -11,7 +11,7 @@ import {
 
 @Component({
   selector: 'inline-toolbar',
-  imports: [CommonModule, HubLinkCardComponent, zapEditorTooltipDirective],
+  imports: [CommonModule, ZeLinkCardComponent, zapEditorTooltipDirective],
   templateUrl: './inline-toolbar.component.html',
   styleUrl: './inline-toolbar.component.scss',
 })

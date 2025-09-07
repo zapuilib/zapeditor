@@ -8,7 +8,7 @@ import {
   COLORS,
   TEXT_FORMATTING_STYLES,
 } from '../../constants';
-import { HubLinkCardComponent } from '../link-card/link-card.component';
+import { ZeLinkCardComponent } from '../link-card/link-card.component';
 import { zapEditorTooltipDirective } from '../tooltip/tooltip.directive';
 
 @Component({
@@ -17,7 +17,7 @@ import { zapEditorTooltipDirective } from '../tooltip/tooltip.directive';
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    HubLinkCardComponent,
+    ZeLinkCardComponent,
     zapEditorTooltipDirective,
   ],
   templateUrl: './editor-toolbar.component.html',

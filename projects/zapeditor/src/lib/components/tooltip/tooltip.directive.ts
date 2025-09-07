@@ -1,4 +1,12 @@
-import { Directive, ElementRef, OnDestroy, OnInit, input, inject } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  input,
+  inject,
+} from '@angular/core';
+
 import { TooltipService } from '../../services/tooltip.service';
 
 @Directive({
@@ -8,7 +16,6 @@ import { TooltipService } from '../../services/tooltip.service';
 export class zapEditorTooltipDirective implements OnInit, OnDestroy {
   zapEditorTooltip = input<string>('');
   tooltipDelay = input<number>(500);
-
   private tooltipService = inject(TooltipService);
   private cleanupFn: (() => void) | null = null;
 
@@ -18,15 +25,11 @@ export class zapEditorTooltipDirective implements OnInit, OnDestroy {
     this.setupTooltip();
   }
 
-  ngOnDestroy() {
-    this.cleanup();
-  }
-
   private setupTooltip() {
     this.cleanupFn = this.tooltipService.createTooltip({
       text: this.zapEditorTooltip(),
       delay: this.tooltipDelay(),
-      element: this.elementRef.nativeElement
+      element: this.elementRef.nativeElement,
     });
   }
 
@@ -35,5 +38,9 @@ export class zapEditorTooltipDirective implements OnInit, OnDestroy {
       this.cleanupFn();
       this.cleanupFn = null;
     }
+  }
+
+  ngOnDestroy() {
+    this.cleanup();
   }
 }

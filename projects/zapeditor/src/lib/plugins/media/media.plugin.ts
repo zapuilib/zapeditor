@@ -1,6 +1,7 @@
 import { Plugin } from 'prosemirror-state';
 import { Node as ProseMirrorNode } from 'prosemirror-model';
 import { EditorView, NodeView } from 'prosemirror-view';
+
 import { MEDIA_CONSTANTS } from './media.constant';
 import { 
   getFileIcon, 

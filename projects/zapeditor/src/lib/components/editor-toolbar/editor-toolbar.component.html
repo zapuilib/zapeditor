@@ -208,11 +208,11 @@
         </button>
         @if (showDropdown === 'link') {
         <div class="dropdown__content link__editor">
-          <hub-editor-link-card
+          <ze-link-card
             [href]="href()"
             [text]="text()"
             (add)="addLink($event)"
-          ></hub-editor-link-card>
+          ></ze-link-card>
         </div>
         }
       </div>

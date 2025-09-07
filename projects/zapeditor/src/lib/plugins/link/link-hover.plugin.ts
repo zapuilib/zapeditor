@@ -1,5 +1,6 @@
 import { Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
+
 import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
 const ANIMATION_DURATION = 200;

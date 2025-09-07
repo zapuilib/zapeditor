@@ -16,12 +16,12 @@ import {
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'hub-editor-link-card',
+  selector: 'ze-link-card',
   imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './link-card.component.html',
   styleUrl: './link-card.component.scss',
 })
-export class HubLinkCardComponent implements OnInit, OnDestroy {
+export class ZeLinkCardComponent implements OnInit, OnDestroy {
   add = output<{ href: string; text: string }>();
   href = model<string>();
   text = model<string>();

@@ -29,7 +29,6 @@ export class zapEditorTooltipComponent implements OnDestroy {
   tooltipTemplate!: TemplateRef<any>;
   text = input<string>('');
   tooltipClass = input<string>('');
-
   private overlayRef: OverlayRef | null = null;
 
   constructor(
