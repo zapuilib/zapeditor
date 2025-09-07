@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 import { MarkSpec, Schema } from 'prosemirror-model';
 import { EditorView } from 'prosemirror-view';
 import { autoLinkPlugin, linkHoverPlugin, placeholderPlugin, codeMirrorPlugin, addSurrounding, markdownPlugin, mentionPlugin, triggerMention, createTodoListPlugin, createTodoInputRulesPlugin, createTodoKeymapPlugin, slashPlugin, mediaPlugin } from '../plugins';
-import { MentionUser } from '../interfaces';
+import { MentionOption } from '../interfaces';
 import { redo, undo } from 'prosemirror-history';
 import { history } from 'prosemirror-history';
 import { EditorState, TextSelection } from 'prosemirror-state';
@@ -13,7 +13,7 @@ import { keymap } from 'prosemirror-keymap';
 @Directive({ selector: '[hubEditor]' })
 export class BaseEditor {
   protected editorView: EditorView | null = null
-  protected users: MentionUser[] = [];
+  protected users: MentionOption[] = [];
   protected onMentionSearch?: (query: string) => void;
   protected mentionPlugin: any = null;;
 
@@ -386,7 +386,7 @@ export class BaseEditor {
     },
   });
 
-  protected updateMentionUsers(newUsers: MentionUser[]) {
+  protected updateMentionOptions(newUsers: MentionOption[]) {
     if (this.mentionPlugin && this.mentionPlugin.updateUsers) {
       this.mentionPlugin.updateUsers(newUsers);
     }

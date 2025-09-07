@@ -1,4 +1,4 @@
-export interface MentionUser {
+export interface MentionOption {
   id: string;
   name: string;
   avatar?: string;
@@ -12,6 +12,6 @@ export interface MentionPluginState {
     to: number;
   };
   query: string;
-  suggestions: MentionUser[];
+  suggestions: MentionOption[];
   index: number;
 }

@@ -55,12 +55,14 @@
       <button
         tabindex="0"
         (click)="undo.emit()"
+        class="toolbar__button"
         zapEditorTooltip="Undo (Ctrl+Z)"
       >
         <i class="fa-regular fa-arrow-u-turn-up-left"></i>
       </button>
       <button
         tabindex="0"
+        class="toolbar__button"
         (click)="redo.emit()"
         zapEditorTooltip="Redo (Ctrl+Y)"
       >

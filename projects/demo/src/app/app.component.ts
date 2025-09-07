@@ -1,6 +1,6 @@
 import { Component, signal, ViewChild, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
-import { ZapEditor, MentionUser, MediaUploadEvent } from 'zapeditor';
+import { ZapEditor, MentionOption, MediaUploadEvent } from 'zapeditor';
 import { UploadService, UploadResponse } from './services/upload.service';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 
@@ -63,7 +63,7 @@ export class AppComponent implements OnDestroy {
     }
   }
 
-  users = signal<MentionUser[]>([
+  users = signal<MentionOption[]>([
     {
       id: '1',
       name: 'John Doe',

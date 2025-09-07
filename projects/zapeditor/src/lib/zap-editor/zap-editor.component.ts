@@ -28,7 +28,7 @@ export interface MediaUploadEvent {
   url: string;
 }
 import { BaseEditor } from './zap-editor.directives';
-import { MentionUser } from '../interfaces';
+import { MentionOption } from '../interfaces';
 
 @Component({
   selector: 'zap-editor',
@@ -69,16 +69,12 @@ import { MentionUser } from '../interfaces';
 })
 export class ZapEditor extends BaseEditor implements AfterViewInit {
   @ViewChild('editor') editor!: ElementRef<HTMLDivElement>;
-  toolbar = input<'inline' | 'default'>('default');
-  format = input<'json' | 'html'>('json');
-  value = input<string>('');
-  usersInput = model<MentionUser[]>([]);
   mentionSearch = output<string>();
   mediaUpload = output<MediaUploadEvent>();
   onChange = output<string>();
-  href = signal<string>('');
-  text = signal<string>('');
-  isOnLink = signal<boolean>(false);
+  toolbar = input<'inline' | 'default'>('default');
+  value = input<string>('');
+  mentionOptions = model<MentionOption[]>([]);
   private isInitialized = false;
   protected readonly platformId = inject(PLATFORM_ID);
   protected readonly cdr = inject(ChangeDetectorRef);
@@ -88,8 +84,9 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     y: number;
     position?: 'top' | 'bottom';
   }>({ x: 0, y: 0, position: 'top' });
-
-  // Toolbar configurations
+  href = signal<string>('');
+  text = signal<string>('');
+  isOnLink = signal<boolean>(false);
   topToolbarConfig = {
     showUndoRedo: true,
     showMention: true,
@@ -108,7 +105,6 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     showItalic: true,
     showUnderline: true,
   };
-
   inlineToolbarConfig = {
     showUndoRedo: false,
     showMention: false,
@@ -132,8 +128,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     super();
 
     effect(() => {
-      this.users = this.usersInput();
-      this.updateMentionUsers(this.users);
+      this.users = this.mentionOptions();
+      this.updateMentionOptions(this.users);
     });
 
     effect(() => {
@@ -153,7 +149,10 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   }
 
   shouldShowToolbar() {
-    return this.toolbar() === 'default' || (this.toolbar() === 'inline' && this.showInlineToolbar());
+    return (
+      this.toolbar() === 'default' ||
+      (this.toolbar() === 'inline' && this.showInlineToolbar())
+    );
   }
 
   getToolbarMode() {
@@ -161,13 +160,16 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   }
 
   getToolbarConfig() {
-    return this.toolbar() === 'default' ? this.topToolbarConfig : this.inlineToolbarConfig;
+    return this.toolbar() === 'default'
+      ? this.topToolbarConfig
+      : this.inlineToolbarConfig;
   }
 
   getToolbarPosition() {
-    return this.toolbar() === 'inline' ? this.inlineToolbarPosition() : { x: 0, y: 0, position: 'top' as 'top' | 'bottom' };
+    return this.toolbar() === 'inline'
+      ? this.inlineToolbarPosition()
+      : { x: 0, y: 0, position: 'top' as 'top' | 'bottom' };
   }
-
 
   ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -674,7 +676,6 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
   onBlockStyle(value: string) {
     this.onStyleChange(value);
   }
-
 
   onSuperscript() {
     if (!this.editorView) return;
@@ -1459,7 +1460,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         img.onload = () => {
           const maxWidth = 800;
           const maxHeight = 600;
-          
+
           let width = img.naturalWidth;
           let height = img.naturalHeight;
 
@@ -1540,7 +1541,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         mediaPos = pos;
         return false;
       }
-      return true; 
+      return true;
     });
 
     if (mediaPos !== -1) {
@@ -1577,13 +1578,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     const { state } = this.editorView;
     const { doc } = state;
 
-    if (this.format() === 'html') {
-      return this.docToHTML(doc);
-    } else {
-      return JSON.stringify(doc.toJSON());
-    }
+    return JSON.stringify(doc.toJSON());
   }
-
 
   private loadInitialContent() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -1600,12 +1596,9 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
 
     try {
       let doc;
-      if (this.format() === 'html') {
-        doc = this.htmlToDoc(content);
-      } else {
-        const json = JSON.parse(content);
-        doc = this.editorView.state.schema.nodeFromJSON(json);
-      }
+
+      const json = JSON.parse(content);
+      doc = this.editorView.state.schema.nodeFromJSON(json);
 
       if (doc) {
         const tr = this.editorView.state.tr.replaceWith(
@@ -1615,69 +1608,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
         );
         this.editorView.dispatch(tr);
       }
-    } catch (error) {
-    }
-  }
-
-  private htmlToDoc(html: string): any {
-    const parser = new DOMParser();
-    const dom = parser.parseFromString(html, 'text/html');
-
-    const textContent = dom.body.textContent || '';
-    return this.editorView!.state.schema.nodes['paragraph'].create(
-      {},
-      this.editorView!.state.schema.text(textContent)
-    );
-  }
-
-  private docToHTML(doc: any): string {
-    let html = '';
-    doc.descendants((node: any) => {
-      if (node.type.name === 'paragraph') {
-        const align = node.attrs.align || 'left';
-        const style = align !== 'left' ? ` style="text-align: ${align}"` : '';
-        html += `<p${style}>${this.nodeToHTML(node)}</p>`;
-      } else if (node.type.name === 'heading') {
-        const level = node.attrs.level;
-        const align = node.attrs.align || 'left';
-        const style = align !== 'left' ? ` style="text-align: ${align}"` : '';
-        html += `<h${level}${style}>${this.nodeToHTML(node)}</h${level}>`;
-      } else if (node.type.name === 'code_block') {
-        html += `<pre><code>${this.nodeToHTML(node)}</code></pre>`;
-      } else if (node.type.name === 'horizontal_rule') {
-        html += '<hr>';
-      } else if (node.type.name === 'blockquote') {
-        html += `<blockquote>${this.nodeToHTML(node)}</blockquote>`;
-      } else if (node.type.name === 'bullet_list') {
-        html += `<ul>${this.nodeToHTML(node)}</ul>`;
-      } else if (node.type.name === 'ordered_list') {
-        const order = node.attrs.order || 1;
-        const start = order !== 1 ? ` start="${order}"` : '';
-        html += `<ol${start}>${this.nodeToHTML(node)}</ol>`;
-      } else if (node.type.name === 'todo_list') {
-        html += `<ul class="todo__list">${this.nodeToHTML(node)}</ul>`;
-      } else if (node.type.name === 'list_item') {
-        html += `<li>${this.nodeToHTML(node)}</li>`;
-      } else if (node.type.name === 'todo_list_item') {
-        const checked = node.attrs.checked ? 'checked' : '';
-        html += `<li class="todo__list__item"><div class="todo__checkbox__wrapper"><input type="checkbox" class="todo__checkbox__input" ${checked} style="display: none;"><div class="todo__checkbox ${
-          checked ? 'todo__checkbox--checked' : ''
-        }" data-checked="${checked}"></div></div><div class="todo__content">${this.nodeToHTML(
-          node
-        )}</div></li>`;
-      } else if (node.type.name === 'media') {
-        const { src, alt, type, width, height } = node.attrs;
-        if (type === 'image') {
-          html += `<div data-media="true" data-src="${src}" data-alt="${alt}" data-type="${type}" data-width="${width}" data-height="${height}"><img src="${src}" alt="${alt}" style="max-width: ${width}px; max-height: ${height}px;"></div>`;
-        } else if (type === 'video') {
-          html += `<div data-media="true" data-src="${src}" data-alt="${alt}" data-type="${type}" data-width="${width}" data-height="${height}"><video src="${src}" controls style="max-width: ${width}px; max-height: ${height}px;"></video></div>`;
-        } else {
-          html += `<div data-media="true" data-src="${src}" data-alt="${alt}" data-type="${type}" data-width="${width}" data-height="${height}"><a href="${src}" target="_blank">${alt}</a></div>`;
-        }
-      }
-      return true;
-    });
-    return html;
+    } catch (error) {}
   }
 
   private nodeToHTML(node: any): string {

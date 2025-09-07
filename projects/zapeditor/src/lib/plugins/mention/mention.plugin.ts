@@ -1,15 +1,15 @@
 import { Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
-import { MentionPluginState, MentionUser } from '../../interfaces';
+import { MentionPluginState, MentionOption } from '../../interfaces';
 import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
 export const mentionPluginKey = new PluginKey<MentionPluginState>('mention');
 
 export interface MentionPluginOptions {
-  users: MentionUser[];
+  users: MentionOption[];
   onMentionSearch?: (query: string) => void;
-  onUsersUpdate?: (users: MentionUser[]) => void;
+  onUsersUpdate?: (users: MentionOption[]) => void;
 }
 
 function getMentionRegex() {
@@ -46,7 +46,7 @@ function getMentionMatch($position: any) {
   }
 }
 
-function getSuggestions(query: string, users: MentionUser[]): MentionUser[] {
+function getSuggestions(query: string, users: MentionOption[]): MentionOption[] {
   if (!query) return users;
 
   return users
@@ -58,7 +58,7 @@ function getSuggestions(query: string, users: MentionUser[]): MentionUser[] {
     .slice(0, 10);
 }
 
-function insertMention(view: EditorView, user: MentionUser, range: { from: number; to: number }) {
+function insertMention(view: EditorView, user: MentionOption, range: { from: number; to: number }) {
   try {
     const { state, dispatch } = view;
     const { schema } = state;
@@ -217,7 +217,7 @@ export function mentionPlugin(options: MentionPluginOptions) {
     hoverEnabled = true;
   }
 
-  const updateUsers = (newUsers: MentionUser[]) => {
+  const updateUsers = (newUsers: MentionOption[]) => {
     currentUsers = newUsers;
   };
 
