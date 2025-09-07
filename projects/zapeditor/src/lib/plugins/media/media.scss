@@ -1,96 +1,100 @@
-.media {
-  &__node {
-    @apply relative block mx-auto overflow-visible cursor-pointer max-w-max text-center my-3;
+.ProseMirror {
+  .media {
+    &__node {
+      @apply relative block mx-auto overflow-visible cursor-pointer max-w-max text-center my-3;
 
-    &.ProseMirror-selectednode {
-      @apply border-none outline-none;
-    }
-  }
-
-  &__container {
-    @apply relative rounded-lg mx-auto;
-  }
-
-  &__upload {
-    &__spinner {
-      @apply w-10 h-10 rounded-full z-[1] border-2 border-zinc-400 border-t-blue-500;
-      animation: media-spin 1s linear infinite;
-    }
-  }
-
-  &__resize {
-    &__handle {
-      @apply absolute top-1/2 -translate-y-1/2 w-1 h-8 bg-zinc-200 rounded cursor-w-resize opacity-0 transition-opacity duration-200 z-20;
-
-      &:hover {
-        @apply bg-zinc-500;
-      }
-
-      &__left {
-        @apply left-2 cursor-w-resize;
-      }
-
-      &__right {
-        @apply right-2 cursor-e-resize;
+      &.ProseMirror-selectednode {
+        @apply border-none outline-none;
       }
     }
-  }
 
-  &__toolbar {
-    @apply absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity duration-200 bg-zinc-900 px-2 py-1 rounded border border-zinc-400/10;
-
-    button {
-      @apply p-1 text-white border-0 rounded cursor-pointer flex items-center justify-center text-xs hover:bg-zinc-400/10;
-    }
-  }
-
-  &__uploading {
     &__container {
-      @apply relative bg-zinc-800/20 flex flex-col items-center justify-center border-2 border-dashed border-zinc-400/10 rounded-lg max-w-full mx-auto;
+      @apply relative rounded-lg mx-auto;
     }
 
-    &__bg {
-      @apply absolute inset-0 bg-cover bg-center blur-sm opacity-30;
+    &__upload {
+      &__spinner {
+        @apply w-10 h-10 rounded-full z-[1] border-2 border-zinc-400 border-t-blue-500;
+        animation: media-spin 1s linear infinite;
+      }
+    }
+
+    &__resize {
+      &__handle {
+        @apply absolute top-1/2 -translate-y-1/2 w-1 h-8 bg-zinc-200 rounded cursor-w-resize opacity-0 transition-opacity duration-200 z-20;
+
+        &:hover {
+          @apply bg-zinc-500;
+        }
+
+        &__left {
+          @apply left-2 cursor-w-resize;
+        }
+
+        &__right {
+          @apply right-2 cursor-e-resize;
+        }
+      }
+    }
+
+    &__toolbar {
+      @apply absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity duration-200 bg-zinc-900 px-2 py-1 rounded border border-zinc-400/10;
+
+      button {
+        @apply p-1 text-white border-0 rounded cursor-pointer flex items-center justify-center text-xs hover:bg-zinc-400/10;
+      }
+    }
+
+    &__uploading {
+      &__container {
+        @apply relative bg-zinc-800/20 flex flex-col items-center justify-center border-2 border-dashed border-zinc-400/10 rounded-lg max-w-full mx-auto;
+      }
+
+      &__bg {
+        @apply absolute inset-0 bg-cover bg-center blur-sm opacity-30;
+      }
+    }
+
+    &__uploaded {
+      &__container {
+        @apply relative rounded-lg overflow-hidden block mx-auto max-w-full;
+      }
+
+      &__img,
+      &__video {
+        @apply w-full h-full object-cover block;
+      }
+    }
+
+    &__placeholder {
+      @apply bg-zinc-800/20 border-2 border-dashed border-zinc-400/30 rounded-lg flex items-center justify-center text-zinc-400 text-sm;
+    }
+
+    &__document {
+      &__preview {
+        @apply w-full h-full flex items-center p-2 bg-zinc-800/20 border border-zinc-400/10 rounded-lg;
+      }
+
+      &__icon {
+        @apply text-2xl text-zinc-600 mr-4 flex-shrink-0;
+      }
+
+      &__details {
+        @apply flex flex-col flex-1 select-none;
+      }
+
+      &__name {
+        @apply text-xs font-medium text-zinc-200 text-left;
+      }
+
+      &__size {
+        @apply text-xs text-zinc-600 mt-1 text-left;
+      }
     }
   }
+}
 
-  &__uploaded {
-    &__container {
-      @apply relative rounded-lg overflow-hidden block mx-auto max-w-full;
-    }
-
-    &__img,
-    &__video {
-      @apply w-full h-full object-cover block;
-    }
-  }
-
-  &__placeholder {
-    @apply bg-zinc-800/20 border-2 border-dashed border-zinc-400/30 rounded-lg flex items-center justify-center text-zinc-400 text-sm;
-  }
-
-  &__document {
-    &__preview {
-      @apply w-full h-full flex items-center p-2 bg-zinc-800/20 border border-zinc-400/10 rounded-lg;
-    }
-
-    &__icon {
-      @apply text-2xl text-zinc-600 mr-4 flex-shrink-0;
-    }
-
-    &__details {
-      @apply flex flex-col flex-1 select-none;
-    }
-
-    &__name {
-      @apply text-xs font-medium text-zinc-200 text-left;
-    }
-
-    &__size {
-      @apply text-xs text-zinc-600 mt-1 text-left;
-    }
-  }
-
+.ze__media {
   &__preview {
     &__modal {
       @apply fixed inset-0 bg-zinc-900/90 z-[9999] cursor-pointer;

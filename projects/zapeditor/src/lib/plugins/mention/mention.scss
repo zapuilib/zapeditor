@@ -1,0 +1,38 @@
+.ProseMirror {
+  .mention {
+    @apply inline-block whitespace-nowrap rounded-full bg-white px-2 py-1 text-xs font-medium text-black cursor-default;
+    @apply transition-all duration-200 hover:bg-white hover:shadow-md;
+
+    &::before {
+      @apply text-white;
+    }
+  }
+}
+
+.ze__mention__suggestions {
+  @apply absolute bg-zinc-900 border border-zinc-400/10 rounded-lg shadow-lg max-h-[700px] overflow-y-auto z-50 min-w-60 font-sans p-1;
+}
+
+.ze__mention__suggestion {
+  @apply flex cursor-pointer items-center gap-3 px-3 py-[5px] rounded-md transition-colors duration-150 ease-in-out;
+
+  &__active {
+    @apply bg-zinc-800 transition-all;
+  }
+}
+
+.ze__mention__suggestion__avatar {
+  @apply flex-shrink-0;
+
+  img {
+    @apply h-6 w-6 rounded-md object-cover;
+  }
+}
+
+.ze__mention__suggestion__info {
+  @apply min-w-0 flex-1;
+}
+
+.ze__mention__suggestion__name {
+  @apply truncate text-xs text-zinc-400;
+}

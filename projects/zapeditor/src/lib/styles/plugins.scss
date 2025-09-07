@@ -1,0 +1,26 @@
+.ze__divider__wrapper {
+  @apply flex min-h-2.5 w-full items-center;
+
+  .ze__divider {
+    @apply my-5 h-px w-full border-none bg-zinc-400/10;
+  }
+}
+
+.zapeditor__blockquote {
+  @apply py-3 pl-4 text-zinc-300 relative;
+
+  &::before {
+    @apply content-[''] absolute left-0 top-0 h-full w-1 bg-zinc-400/30 rounded-full;
+  }
+
+  p {
+    @apply m-0;
+  }
+}
+
+@import "../plugins/link/link";
+@import "../plugins/mention/mention";
+@import "../plugins/slash/slash.plugin";
+@import "../plugins/media/media";
+@import "../plugins/codeblock/codeblock";
+@import "../components/tooltip/tooltip";

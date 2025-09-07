@@ -18,7 +18,7 @@ import { ConnectedPosition } from '@angular/cdk/overlay';
   imports: [CommonModule],
   template: `
     <ng-template #tooltipTemplate>
-      <div class="zapeditor__tooltip" [class]="tooltipClass()">
+      <div class="ze__tooltip" [class]="tooltipClass()">
         {{ text() }}
       </div>
     </ng-template>
@@ -81,7 +81,7 @@ export class zapEditorTooltipComponent implements OnDestroy {
         .withPush(false),
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
       hasBackdrop: false,
-      panelClass: 'hub-tooltip-overlay',
+      panelClass: 'zapexitor__tooltip__overlay',
     };
 
     this.overlayRef = this.overlay.create(overlayConfig);

@@ -16,7 +16,7 @@ export function linkHoverPlugin() {
 
   function createHoverCard(): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'prosemirror__link__card';
+    card.className = 'ze__link__card';
     card.style.position = 'absolute';
     card.style.zIndex = '9999';
     card.style.display = 'none';
@@ -25,7 +25,7 @@ export function linkHoverPlugin() {
     card.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out';
     
     const content = document.createElement('div');
-    content.className = 'prosemirror__link__card__content';
+    content.className = 'ze__link__card__content';
     card.appendChild(content);
     
     (card as any).content = content;
@@ -58,20 +58,20 @@ export function linkHoverPlugin() {
   function createNormalContent(): DocumentFragment {
     const fragment = document.createDocumentFragment();
     
-    const editBtn = createButton('Edit link', 'prosemirror__link__card__edit__button', () => showEditMode());
+    const editBtn = createButton('Edit link', 'ze__link__card__edit__button', () => showEditMode());
     
     const separator = document.createElement('div');
-    separator.className = 'prosemirror__link__card__separator';
+    separator.className = 'ze__link__card__separator';
 
     const actions = document.createElement('div');
-    actions.className = 'prosemirror__link__card__actions';
+    actions.className = 'ze__link__card__actions';
 
-    const unlinkBtn = createIconButton('fa-link-slash', 'Remove link', 'prosemirror__link__card__unlink', () => removeLink());
+    const unlinkBtn = createIconButton('fa-link-slash', 'Remove link', 'ze__link__card__unlink', () => removeLink());
     
     const iconSep = document.createElement('div');
-    iconSep.className = 'prosemirror__link__card__icon__separator';
+    iconSep.className = 'ze__link__card__icon__separator';
     
-    const newTabBtn = createIconButton('fa-external-link-alt', 'Open in new tab', 'prosemirror__link__card__newtab', () => openInNewTab());
+    const newTabBtn = createIconButton('fa-external-link-alt', 'Open in new tab', 'ze__link__card__newtab', () => openInNewTab());
     
     actions.appendChild(unlinkBtn);
     actions.appendChild(iconSep);
@@ -86,16 +86,16 @@ export function linkHoverPlugin() {
 
   function createInputGroup(labelText: string, placeholder: string, value: string, className: string): HTMLElement {
     const group = document.createElement('div');
-    group.className = 'prosemirror__link__card__input__group';
+    group.className = 'ze__link__card__input__group';
     
     const label = document.createElement('label');
     label.textContent = labelText;
-    label.className = 'prosemirror__link__card__input__label';
+    label.className = 'ze__link__card__input__label';
     
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = placeholder;
-    input.className = 'prosemirror__link__card__input';
+    input.className = 'ze__link__card__input';
     input.value = value;
     
     group.appendChild(label);
@@ -108,30 +108,30 @@ export function linkHoverPlugin() {
     const fragment = document.createDocumentFragment();
     
     const form = document.createElement('div');
-    form.className = 'prosemirror__link__card__edit__form';
+    form.className = 'ze__link__card__edit__form';
     
     const urlGroup = createInputGroup(
       'Type or paste a link',
       'https://',
       currentLink?.getAttribute('href') || '',
-      'prosemirror__link__card__input__group'
+      'ze__link__card__input__group'
     );
     
     const textGroup = createInputGroup(
       'Display text (optional)',
       'Link text',
       currentLink?.textContent || '',
-      'prosemirror__link__card__input__group'
+      'ze__link__card__input__group'
     );
     
     const buttonGroup = document.createElement('div');
-    buttonGroup.className = 'prosemirror__link__card__button__group';
+    buttonGroup.className = 'ze__link__card__button__group';
     
     const urlInput = urlGroup.querySelector('input') as HTMLInputElement;
     const textInput = textGroup.querySelector('input') as HTMLInputElement;
     
-    const updateBtn = createButton('Update', 'prosemirror__link__card__update', () => updateLink(urlInput.value, textInput.value));
-    const cancelBtn = createButton('Cancel', 'prosemirror__link__card__cancel', () => showNormalMode());
+    const updateBtn = createButton('Update', 'ze__link__card__update', () => updateLink(urlInput.value, textInput.value));
+    const cancelBtn = createButton('Cancel', 'ze__link__card__cancel', () => showNormalMode());
     
     buttonGroup.appendChild(updateBtn);
     buttonGroup.appendChild(cancelBtn);
@@ -151,7 +151,7 @@ export function linkHoverPlugin() {
     content.innerHTML = '';
     content.appendChild(createNormalContent());
     
-    hovercard.classList.remove('prosemirror__link__card__edit');
+    hovercard.classList.remove('ze__link__card__edit');
     isEditMode = false;
     
     initializeTooltips(hovercard);
@@ -164,7 +164,7 @@ export function linkHoverPlugin() {
     content.innerHTML = '';
     content.appendChild(createEditContent());
     
-    hovercard.classList.add('prosemirror__link__card__edit');
+    hovercard.classList.add('ze__link__card__edit');
     isEditMode = true;
   }
 

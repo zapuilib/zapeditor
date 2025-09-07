@@ -22,7 +22,7 @@ export class TooltipService {
       this.hideTooltipForElement(element);
       
       const tooltipElement = document.createElement('div');
-      tooltipElement.className = 'zapeditor__tooltip zapeditor__tooltip--entering';
+      tooltipElement.className = 'ze__tooltip ze__tooltip--entering';
       tooltipElement.textContent = text;
       tooltipElement.style.position = 'absolute';
       tooltipElement.style.zIndex = '10001';
@@ -61,8 +61,8 @@ export class TooltipService {
           tooltipElement.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out';
           tooltipElement.style.opacity = '1';
           tooltipElement.style.transform = 'translateY(0)';
-          tooltipElement.classList.remove('zapeditor__tooltip--entering');
-          tooltipElement.classList.add('zapeditor__tooltip--visible');
+          tooltipElement.classList.remove('ze__tooltip--entering');
+          tooltipElement.classList.add('ze__tooltip--visible');
         }
       });
     };
@@ -100,8 +100,8 @@ export class TooltipService {
       tooltipElement.style.transition = 'opacity 0.15s ease-in, transform 0.15s ease-in';
       tooltipElement.style.opacity = '0';
       tooltipElement.style.transform = 'translateY(5px)';
-      tooltipElement.classList.remove('zapeditor__tooltip--visible');
-      tooltipElement.classList.add('zapeditor__tooltip--exiting');
+      tooltipElement.classList.remove('ze__tooltip--visible');
+      tooltipElement.classList.add('ze__tooltip--exiting');
 
       setTimeout(() => {
         if (tooltipElement && tooltipElement.parentNode) {

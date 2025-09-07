@@ -106,7 +106,7 @@ export function mentionPlugin(options: MentionPluginOptions) {
     }
 
     const el = document.createElement('div');
-    el.className = 'mention__suggestions';
+    el.className = 'ze__mention__suggestions';
 
     document.body.appendChild(el);
     return el;
@@ -127,13 +127,13 @@ export function mentionPlugin(options: MentionPluginOptions) {
     suggestionElement.innerHTML = suggestions
       .map(
         (user, i) => `
-        <div class="mention__suggestion ${i === index ? 'mention__suggestion__active' : ''}" 
+        <div class="ze__mention__suggestion ${i === index ? 'ze__mention__suggestion__active' : ''}" 
              data-index="${i}">
-          <div class="mention__suggestion__avatar">
+          <div class="ze__mention__suggestion__avatar">
             <img src="${user.avatar || '/assets/avatars/default.png'}" alt="${user.name}" />
           </div>
-          <div class="mention__suggestion__info">
-            <div class="mention__suggestion__name">${user.name}</div>
+          <div class="ze__mention__suggestion__info">
+            <div class="ze__mention__suggestion__name">${user.name}</div>
           </div>
         </div>
       `,
@@ -188,7 +188,7 @@ export function mentionPlugin(options: MentionPluginOptions) {
     };
     document.addEventListener('mousemove', handleMouseMove);
 
-    suggestionElement.querySelectorAll('.mention__suggestion').forEach((item, i) => {
+    suggestionElement.querySelectorAll('.ze__mention__suggestion').forEach((item, i) => {
       item.addEventListener('click', () => {
         const user = suggestions[i];
         insertMention(view, user, state.range);
@@ -295,8 +295,8 @@ export function mentionPlugin(options: MentionPluginOptions) {
             view.dispatch(view.state.tr.setMeta(mentionPluginKey, { ...state, index: newIndex }));
             
             setTimeout(() => {
-              const container = document.querySelector('.mention__suggestions') as HTMLElement;
-              const activeItem = container?.querySelector('.mention__suggestion__active') as HTMLElement;
+              const container = document.querySelector('.ze__mention__suggestions') as HTMLElement;
+              const activeItem = container?.querySelector('.ze__mention__suggestion__active') as HTMLElement;
               if (container && activeItem) {
                 const containerHeight = container.clientHeight;
                 const containerScrollTop = container.scrollTop;
@@ -333,8 +333,8 @@ export function mentionPlugin(options: MentionPluginOptions) {
             view.dispatch(view.state.tr.setMeta(mentionPluginKey, { ...state, index: prevIndex }));
             
             setTimeout(() => {
-              const container = document.querySelector('.mention__suggestions') as HTMLElement;
-              const activeItem = container?.querySelector('.mention__suggestion__active') as HTMLElement;
+              const container = document.querySelector('.ze__mention__suggestions') as HTMLElement;
+              const activeItem = container?.querySelector('.ze__mention__suggestion__active') as HTMLElement;
               if (container && activeItem) {
                 const itemOffsetTop = activeItem.offsetTop;
                 const itemHeight = activeItem.clientHeight;

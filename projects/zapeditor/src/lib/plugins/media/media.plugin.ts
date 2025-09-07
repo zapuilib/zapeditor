@@ -141,12 +141,10 @@ class MediaNodeView implements NodeView {
     if (this.mediaType === 'image' || this.mediaType === 'video') {
       const leftHandle = document.createElement('div');
       leftHandle.className = 'media__resize__handle media__resize__handle__left';
-      leftHandle.setAttribute('zapEditorTooltip', 'Resize');
       container.appendChild(leftHandle);
 
       const rightHandle = document.createElement('div');
       rightHandle.className = 'media__resize__handle media__resize__handle__right';
-      rightHandle.setAttribute('zapEditorTooltip', 'Resize');
       container.appendChild(rightHandle);
     }
   }
@@ -338,10 +336,10 @@ class MediaNodeView implements NodeView {
 
   private createPreviewModal() {
     const modal = document.createElement('div');
-    modal.className = 'media__preview__modal';
+    modal.className = 'ze__media__preview__modal';
 
     const content = document.createElement('div');
-    content.className = 'media__preview__content';
+    content.className = 'ze__media__preview__content';
 
     const header = this.createModalHeader();
     const mediaContainer = this.createModalMediaContainer();
@@ -359,21 +357,21 @@ class MediaNodeView implements NodeView {
 
   private createModalHeader() {
     const header = document.createElement('div');
-    header.className = 'media__preview__header';
+    header.className = 'ze__media__preview__header';
 
     const closeBtn = document.createElement('button');
-    closeBtn.className = 'media__preview__close';
+    closeBtn.className = 'ze__media__preview__close';
     closeBtn.innerHTML = '<i class="fa-regular fa-times"></i>';
     closeBtn.setAttribute('zapEditorTooltip', 'Close');
 
     const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'media__preview__download';
+    downloadBtn.className = 'ze__media__preview__download';
     downloadBtn.innerHTML = '<i class="fa-regular fa-download"></i>';
     downloadBtn.setAttribute('zapEditorTooltip', 'Download');
 
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.closePreviewModal(closeBtn.closest('.media__preview__modal') as HTMLElement);
+      this.closePreviewModal(closeBtn.closest('.ze__media__preview__modal') as HTMLElement);
     });
 
     downloadBtn.addEventListener('click', (e) => {
@@ -389,7 +387,7 @@ class MediaNodeView implements NodeView {
 
   private createModalMediaContainer() {
     const mediaContainer = document.createElement('div');
-    mediaContainer.className = 'media__preview__media';
+    mediaContainer.className = 'ze__media__preview__media';
 
     const mediaElement = this.createModalMediaElement();
     mediaContainer.appendChild(mediaElement);

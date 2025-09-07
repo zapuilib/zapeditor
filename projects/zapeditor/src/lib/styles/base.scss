@@ -1,0 +1,86 @@
+.ProseMirror {
+  @apply relative px-8 py-6 bg-zinc-950 focus:outline-none min-h-full;
+
+  &.drag-over {
+    @apply border-2 border-dashed border-blue-500 bg-blue-500/5;
+  }
+
+  a {
+    @apply text-zinc-200 underline;
+  }
+
+  h1 {
+    @apply text-3xl font-medium mb-3;
+
+    strong {
+      @apply text-3xl;
+    }
+  }
+
+  h2 {
+    @apply text-2xl font-medium mb-3;
+
+    strong {
+      @apply text-2xl;
+    }
+  }
+
+  h3 {
+    @apply text-xl font-medium mb-3;
+
+    strong {
+      @apply text-xl;
+    }
+  }
+
+  h4 {
+    @apply text-lg font-medium mb-3;
+
+    strong {
+      @apply text-lg;
+    }
+  }
+
+  h5 {
+    @apply text-base font-medium mb-3;
+
+    strong {
+      @apply text-base;
+    }
+  }
+
+  h6 {
+    @apply text-sm font-medium mb-3;
+
+    strong {
+      @apply text-sm;
+    }
+  }
+
+  * {
+    &::selection {
+      @apply bg-[#264f78];
+    }
+  }
+
+  [data-placeholder] {
+    @apply relative;
+  }
+
+  [data-placeholder]::before {
+    @apply pointer-events-none absolute top-0 left-0 w-full h-full flex items-center select-none text-zinc-400 text-sm font-normal content-[attr(data-placeholder)];
+  }
+
+  p,
+  strong {
+    @apply text-sm text-zinc-200 leading-relaxed mb-3;
+  }
+
+  li {
+    @apply text-zinc-200;
+  }
+
+  code {
+    @apply rounded bg-zinc-900 px-1 py-px text-zinc-400 border-zinc-800 border;
+  }
+}

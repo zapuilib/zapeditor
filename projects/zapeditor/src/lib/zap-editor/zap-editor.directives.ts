@@ -202,7 +202,7 @@ export class BaseEditor {
         atom: true,
         parseDOM: [{ tag: 'hr' }],
         toDOM() {
-          return ['div', { class: 'hub__editor__divider__wrapper' }, ['hr', { class: 'hub__editor__divider' }]];
+          return ['div', { class: 'ze__divider__wrapper' }, ['hr', { class: 'ze__divider' }]];
         },
       },
       blockquote: {
@@ -211,7 +211,7 @@ export class BaseEditor {
         defining: true,
         parseDOM: [{ tag: 'blockquote' }],
         toDOM() {
-          return ['blockquote', { class: 'hub__editor__blockquote' }, 0];
+          return ['blockquote', { class: 'zapeditor__blockquote' }, 0];
         },
       },
       mention: {

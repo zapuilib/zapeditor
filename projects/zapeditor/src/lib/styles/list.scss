@@ -1,0 +1,112 @@
+.ProseMirror {
+  ul {
+    li {
+      @apply ml-5  list-outside list-disc;
+
+      .todo__list {
+        @apply ml-2;
+
+        .todo__list__item {
+          @apply list-none;
+
+          &::before {
+            @apply hidden;
+          }
+        }
+      }
+    }
+  }
+
+  ol {
+    @apply ml-8 list-none;
+    counter-reset: level-0;
+
+    &:not(:first-child) {
+      counter-reset: level-0;
+    }
+
+    li {
+      & > * {
+        @apply mb-1.5;
+      }
+    }
+
+    > li {
+      @apply relative list-none;
+      counter-increment: level-0;
+
+      &::before {
+        @apply absolute -left-7 top-0 w-6 text-left font-medium leading-[24px] text-zinc-400;
+        content: counter(level-0) ".";
+      }
+
+      .todo__list {
+        @apply ml-2;
+
+        .todo__list__item {
+          @apply list-none;
+
+          &::before {
+            @apply hidden;
+          }
+        }
+      }
+
+      ol {
+        @apply ml-2;
+        counter-reset: level-1;
+
+        > li {
+          @apply relative pl-5;
+          counter-increment: level-1;
+
+          &::before {
+            @apply absolute left-0 top-0 w-6 text-left font-medium leading-[20px] text-zinc-400;
+            content: counter(level-1, lower-alpha) ".";
+          }
+
+          .todo__list {
+            @apply ml-2;
+
+            .todo__list__item {
+              @apply list-none;
+
+              &::before {
+                @apply hidden;
+              }
+            }
+          }
+
+          ol {
+            counter-reset: level-2;
+
+            > li {
+              @apply relative mt-1.5 pl-5;
+              counter-increment: level-2;
+
+              &::before {
+                @apply absolute left-0 top-0 w-6 text-left font-medium leading-[20px] text-zinc-400;
+                content: counter(level-2, lower-roman) ".";
+              }
+
+              .todo__list {
+                @apply ml-2 mt-3;
+
+                .todo__list__item {
+                  @apply list-none;
+
+                  &::before {
+                    @apply hidden;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+@import '../plugins/todo-list/todo';

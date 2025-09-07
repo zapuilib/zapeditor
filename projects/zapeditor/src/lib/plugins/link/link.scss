@@ -1,0 +1,64 @@
+.ze__link__card {
+  @apply absolute hidden;
+
+  &__content {
+    @apply flex w-max items-center gap-1 rounded-md border border-zinc-400/10 bg-zinc-900 px-1 py-0.5 text-sm text-zinc-400;
+  }
+
+  &__edit__button {
+    @apply w-max cursor-pointer rounded border-none bg-transparent p-1 px-2 text-left text-sm text-zinc-200 transition-colors hover:bg-zinc-800;
+  }
+
+  &__form {
+    @apply w-full;
+  }
+
+  &__separator {
+    @apply mx-1 my-1 h-5 w-px bg-zinc-400/10;
+  }
+
+  &__actions {
+    @apply flex items-center gap-1;
+  }
+
+  &__unlink,
+  &__newtab {
+    @apply flex-1 cursor-pointer rounded border-none bg-transparent p-1 px-1.5 text-center text-sm text-zinc-200 transition-colors hover:bg-zinc-800;
+  }
+
+  &__icon_separator {
+    @apply mx-0.5 h-5 w-px bg-zinc-400/10;
+  }
+
+  &__edit {
+    @apply block;
+  }
+
+  &__edit__form {
+    @apply w-full min-w-[20rem];
+  }
+
+  &__input {
+    @apply mb-2 w-full rounded border border-zinc-400/10 bg-zinc-900 p-2 text-sm text-zinc-200 focus:border-zinc-500 focus:outline-none;
+  }
+
+  &__input__group {
+    @apply mb-3;
+  }
+
+  &__input__label {
+    @apply block mb-1 text-xs font-medium text-zinc-400;
+  }
+
+  &__button__group {
+    @apply flex gap-2;
+  }
+
+  &__update {
+    @apply flex-1 rounded bg-zinc-600 px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-zinc-500;
+  }
+
+  &__cancel {
+    @apply flex-1 rounded border border-zinc-400/10 bg-transparent px-3 py-1 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-800;
+  }
+}
