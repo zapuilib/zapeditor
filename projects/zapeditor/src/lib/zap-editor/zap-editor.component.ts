@@ -20,7 +20,7 @@ import { EditorView } from 'prosemirror-view';
 import { wrapInList, liftListItem } from 'prosemirror-schema-list';
 import { TextSelection } from 'prosemirror-state';
 
-import { ZapEditorToolbar, InlineToolbarComponent } from '../components';
+import { ZeToolbarComponent } from '../components';
 
 export interface MediaUploadEvent {
   file: File;
@@ -32,10 +32,13 @@ import { MentionUser } from '../interfaces';
 
 @Component({
   selector: 'zap-editor',
-  imports: [ZapEditorToolbar, InlineToolbarComponent, OverlayModule],
+  imports: [ZeToolbarComponent, OverlayModule],
   template: ` <div class="wysiwyg__editor__wrapper">
-    @if (toolbar() === 'default') {
-    <hub-editor-toolbar
+    @if (shouldShowToolbar()) {
+    <ze-toolbar
+      [mode]="getToolbarMode()"
+      [config]="getToolbarConfig()"
+      [position]="getToolbarPosition()"
       [href]="href()"
       [text]="text()"
       [isOnLink]="isOnLink()"
@@ -46,6 +49,8 @@ import { MentionUser } from '../interfaces';
       (bold)="onBold()"
       (italic)="onItalic()"
       (underline)="onUnderline()"
+      (strikethrough)="onStrikethrough()"
+      (code)="onCode()"
       (textFormat)="onTextFormat($event)"
       (align)="setTextAlign($event)"
       (list)="onList($event)"
@@ -56,41 +61,9 @@ import { MentionUser } from '../interfaces';
       (at)="onAt()"
       (block)="onBlock($event)"
       (file)="onFileUpload($event)"
-    ></hub-editor-toolbar>
+    ></ze-toolbar>
     }
     <div #editor class="wysiwyg__editor"></div>
-
-    @if (toolbar() === 'inline' && showInlineToolbar()) {
-    <inline-toolbar
-      [position]="inlineToolbarPosition()"
-      [currentColor]="getCurrentColor()"
-      [isBold]="isBoldActive()"
-      [isItalic]="isItalicActive()"
-      [isUnderline]="isUnderlineActive()"
-      [isStrikethrough]="isStrikethroughActive()"
-      [isCode]="isCodeActive()"
-      [isAlignLeft]="isAlignLeftActive()"
-      [isAlignCenter]="isAlignCenterActive()"
-      [isAlignRight]="isAlignRightActive()"
-      [isAlignJustify]="isAlignJustifyActive()"
-      [isOnLink]="isOnLink()"
-      [href]="href()"
-      [text]="text()"
-      (bold)="onBold()"
-      (italic)="onItalic()"
-      (underline)="onUnderline()"
-      (strikethrough)="onStrikethrough()"
-      (code)="onCode()"
-      (align)="setTextAlign($event)"
-      (color)="onColor($event)"
-      (link)="onLink($event)"
-      (linkButtonClick)="onLinkButtonClick()"
-      (list)="onListInline($event)"
-      (codeBlock)="onCodeBlock()"
-      (blockStyle)="onBlockStyle($event)"
-      (textFormatting)="onTextFormatting($event)"
-    ></inline-toolbar>
-    }
   </div>`,
   styleUrl: './zap-editor.component.scss',
 })
@@ -116,6 +89,45 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     position?: 'top' | 'bottom';
   }>({ x: 0, y: 0, position: 'top' });
 
+  // Toolbar configurations
+  topToolbarConfig = {
+    showUndoRedo: true,
+    showMention: true,
+    showFileUpload: true,
+    showMoreBlocks: true,
+    showStrikethrough: false,
+    showCode: false,
+    showCodeBlock: true,
+    showBlockStyle: true,
+    showTextFormatting: true,
+    showAlignment: true,
+    showLists: true,
+    showColor: true,
+    showLink: true,
+    showBold: true,
+    showItalic: true,
+    showUnderline: true,
+  };
+
+  inlineToolbarConfig = {
+    showUndoRedo: false,
+    showMention: false,
+    showFileUpload: false,
+    showMoreBlocks: false,
+    showStrikethrough: true,
+    showCode: true,
+    showCodeBlock: true,
+    showBlockStyle: true,
+    showTextFormatting: true,
+    showAlignment: true,
+    showLists: true,
+    showColor: true,
+    showLink: true,
+    showBold: true,
+    showItalic: true,
+    showUnderline: true,
+  };
+
   constructor() {
     super();
 
@@ -138,6 +150,22 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     this.onMentionSearch = (query: string) => {
       this.mentionSearch.emit(query);
     };
+  }
+
+  shouldShowToolbar() {
+    return this.toolbar() === 'default' || (this.toolbar() === 'inline' && this.showInlineToolbar());
+  }
+
+  getToolbarMode() {
+    return this.toolbar() === 'default' ? 'top' : 'inline';
+  }
+
+  getToolbarConfig() {
+    return this.toolbar() === 'default' ? this.topToolbarConfig : this.inlineToolbarConfig;
+  }
+
+  getToolbarPosition() {
+    return this.toolbar() === 'inline' ? this.inlineToolbarPosition() : { x: 0, y: 0, position: 'top' as 'top' | 'bottom' };
   }
 
 
@@ -200,7 +228,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
           const target = event.target as Element;
           const editorElement = this.editor?.nativeElement;
 
-          const inlineToolbarElement = document.querySelector('inline-toolbar');
+          const inlineToolbarElement = document.querySelector('ze-toolbar');
           if (inlineToolbarElement && inlineToolbarElement.contains(target)) {
             return;
           }
@@ -422,7 +450,7 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
       const toolbarElement = document.querySelector(
         '.inline__toolbar__content'
       ) as HTMLElement;
-      let toolbarWidth = 300;
+      let toolbarWidth = 523;
       let toolbarHeight = 40;
 
       if (toolbarElement) {
@@ -432,47 +460,41 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
       }
 
       const offset = 2;
-      const minLeftOffset = 50;
       const isMobile = window.innerWidth <= 768;
+      const minLeftOffset = 50;
 
       let x = selectionCenterX;
       let y = selectionTop;
       let position: 'top' | 'bottom' = 'top';
 
-      y = selectionTop - toolbarHeight - offset + 40;
+      y = selectionTop - toolbarHeight - offset + 40 - 40;
       position = 'top';
+      let leftPosition = selectionCenterX - toolbarWidth / 2;
 
       if (isMobile) {
         const lineStart = $from.start();
         const lineStartCoords = this.editorView.coordsAtPos(lineStart);
-        x = lineStartCoords.left;
-
-        const minX = minLeftOffset + toolbarWidth / 2;
-        const maxX = window.innerWidth - minLeftOffset - toolbarWidth / 2;
-
-        if (x < minX) {
-          x = minX;
-        } else if (x > maxX) {
-          x = maxX;
-        }
-      } else {
-        const minX = minLeftOffset + toolbarWidth / 2;
-        const maxX = window.innerWidth - minLeftOffset - toolbarWidth / 2;
-
-        if (x < minX) {
-          x = minX;
-        } else if (x > maxX) {
-          x = maxX;
-        }
+        leftPosition = lineStartCoords.left;
       }
 
+      const minLeft = minLeftOffset;
+      const maxLeft = window.innerWidth - minLeftOffset - toolbarWidth;
+
+      if (leftPosition < minLeft) {
+        leftPosition = minLeft;
+      } else if (leftPosition > maxLeft) {
+        leftPosition = maxLeft;
+      }
+
+      x = isMobile ? 20 : leftPosition;
+
       if (y < 20) {
-        y = selectionBottom + offset;
+        y = selectionBottom + offset - 40;
         position = 'bottom';
       }
 
       if (y + toolbarHeight > window.innerHeight - 20) {
-        y = selectionTop - toolbarHeight - offset;
+        y = selectionTop - toolbarHeight - offset - 40;
         position = 'top';
       }
 
@@ -653,28 +675,11 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     this.onStyleChange(value);
   }
 
-  onTextFormatting(value: string) {
-    if (!this.editorView) return;
-
-    switch (value) {
-      case 'strikethrough':
-        this.onStrikethrough();
-        break;
-      case 'code':
-        this.onCode();
-        break;
-      case 'superscript':
-        this.onSuperscript();
-        break;
-      case 'subscript':
-        this.onSubscript();
-        break;
-    }
-  }
 
   onSuperscript() {
     if (!this.editorView) return;
     const { sup } = this.editorView.state.schema.marks;
+    console.log('Superscript mark available:', sup);
     if (sup) {
       toggleMark(sup)(this.editorView.state, this.editorView.dispatch);
       this.editorView.focus();
@@ -682,12 +687,15 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
       setTimeout(() => {
         this.updateInlineToolbar();
       }, 0);
+    } else {
+      console.warn('Superscript mark not available in schema');
     }
   }
 
   onSubscript() {
     if (!this.editorView) return;
     const { sub } = this.editorView.state.schema.marks;
+    console.log('Subscript mark available:', sub);
     if (sub) {
       toggleMark(sub)(this.editorView.state, this.editorView.dispatch);
       this.editorView.focus();
@@ -695,6 +703,8 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
       setTimeout(() => {
         this.updateInlineToolbar();
       }, 0);
+    } else {
+      console.warn('Subscript mark not available in schema');
     }
   }
 
@@ -745,19 +755,37 @@ export class ZapEditor extends BaseEditor implements AfterViewInit {
     if (!this.editorView) return;
 
     const { strike, code, sup, sub } = this.editorView.state.schema.marks;
+    console.log('Available marks:', { strike, code, sup, sub });
+    console.log('Text format value:', value);
 
     switch (value) {
       case 'strikethrough':
-        toggleMark(strike)(this.editorView.state, this.editorView.dispatch);
+        if (strike) {
+          toggleMark(strike)(this.editorView.state, this.editorView.dispatch);
+        } else {
+          console.warn('Strikethrough mark not available');
+        }
         break;
       case 'code':
-        toggleMark(code)(this.editorView.state, this.editorView.dispatch);
+        if (code) {
+          toggleMark(code)(this.editorView.state, this.editorView.dispatch);
+        } else {
+          console.warn('Code mark not available');
+        }
         break;
       case 'superscript':
-        toggleMark(sup)(this.editorView.state, this.editorView.dispatch);
+        if (sup) {
+          toggleMark(sup)(this.editorView.state, this.editorView.dispatch);
+        } else {
+          console.warn('Superscript mark not available');
+        }
         break;
       case 'subscript':
-        toggleMark(sub)(this.editorView.state, this.editorView.dispatch);
+        if (sub) {
+          toggleMark(sub)(this.editorView.state, this.editorView.dispatch);
+        } else {
+          console.warn('Subscript mark not available');
+        }
         break;
     }
 

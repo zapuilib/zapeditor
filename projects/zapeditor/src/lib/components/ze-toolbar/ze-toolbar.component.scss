@@ -1,0 +1,231 @@
+.toolbar {
+  @apply flex gap-x-2 border-b border-zinc-400/10 bg-zinc-950 px-3 py-2;
+
+  &__top {
+    @apply flex gap-x-2 border-b border-zinc-400/10 overflow-auto bg-zinc-950 px-3 py-2;
+  }
+
+  &__inline {
+    @apply fixed z-50 pointer-events-none p-0 rounded-md;
+
+    &.toolbar__top-position {
+      margin-top: -8px;
+    }
+
+    &.toolbar__bottom-position {
+      margin-top: 8px;
+    }
+  }
+
+  &__content {
+    @apply flex items-center gap-x-2 w-full;
+
+    .toolbar__inline & {
+      @apply flex gap-x-1 rounded-md pointer-events-auto overflow-auto bg-zinc-900 mx-auto py-1;
+      width: 523px;
+      max-width: calc(100vw - 40px);
+      
+      @media (max-width: 523px) {
+        width: calc(100vw - 40px);
+      }
+    }
+  }
+
+  &__group {
+    @apply relative mx-1 flex items-center;
+
+    &:not(:last-of-type)::after {
+      @apply absolute -right-2 h-4 w-px bg-zinc-400/20 content-[''];
+    }
+
+    .toolbar__button {
+      @apply cursor-pointer rounded-md border-0 bg-transparent px-1 py-0.5 text-zinc-200 outline-0 hover:bg-zinc-400/10;
+
+      svg {
+        @apply h-3.5 w-3.5;
+      }
+
+      .toolbar__inline & {
+        svg {
+          @apply h-4 w-4;
+        }
+      }
+    }
+
+    .toolbar__media__trigger {
+      @apply p-2;
+    }
+  }
+
+  &__separator {
+    @apply h-4 w-px bg-zinc-400/20;
+  }
+
+  &__dropdown__wrapper {
+    @apply relative;
+
+    .toolbar__inline & {
+      @apply z-20;
+    }
+  }
+
+  &__dropdown__content {
+    @apply hidden animate-slide-from-t-to-b absolute z-10 mt-3 min-w-60 rounded-md border border-zinc-400/10 bg-zinc-900;
+
+    .toolbar__inline & {
+      @apply z-50;
+      // Ensure dropdown can extend beyond toolbar bounds
+      position: fixed;
+      // No transform needed - we calculate exact position in TypeScript
+      // Ensure dropdown is visible on mobile
+      max-width: calc(100vw - 20px);
+    }
+
+    .toolbar__top & {
+      @apply z-50;
+      // Use fixed positioning to avoid clipping by containers
+      position: fixed;
+      // Ensure dropdown appears above all other content
+      z-index: 9999 !important;
+    }
+
+    .toolbar__option {
+      @apply flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800/50 cursor-pointer transition-all duration-200 first-of-type:rounded-t-md last-of-type:rounded-b-md;
+
+      span {
+        @apply text-sm;
+
+        &.h1 {
+          @apply text-2xl font-bold;
+        }
+
+        &.h2 {
+          @apply text-xl font-bold;
+        }
+
+        &.h3 {
+          @apply text-lg font-bold;
+        }
+
+        &.h4 {
+          @apply text-base font-bold;
+        }
+
+        &.h5 {
+          @apply text-base font-semibold;
+        }
+
+        &.h6 {
+          @apply text-sm font-semibold;
+        }
+
+        &.p {
+          @apply text-sm;
+        }
+      }
+
+      .toolbar__shortcut {
+        @apply text-xs text-zinc-600;
+      }
+    }
+
+    &__color {
+      @apply hidden min-w-max grid-cols-9 gap-3 p-2;
+
+      .toolbar__option {
+        @apply flex h-7 w-7 cursor-pointer items-center justify-between rounded-full first-of-type:rounded-t-full last-of-type:rounded-b-full p-0 hover:bg-zinc-400;
+      }
+    }
+
+    &__link {
+      @apply min-w-[18rem];
+    }
+
+    &__blocks {
+      @apply min-w-[20rem];
+
+      .toolbar__search__wrapper {
+        @apply p-3 border-b border-zinc-400/10;
+      }
+
+      .toolbar__option {
+        @apply flex cursor-pointer justify-start gap-x-4 py-2 rounded-full;
+
+        img {
+          @apply h-12 w-12 rounded-md;
+        }
+
+        .toolbar__details {
+          @apply flex flex-col;
+
+          span {
+            @apply text-sm last-of-type:text-xs;
+          }
+        }
+      }
+    }
+  }
+  
+
+  &__dropdown {
+    @apply relative px-2;
+
+    &__compact {
+      @apply px-0;
+    }
+
+    &__alt {
+      @apply p-1.5;
+    }
+
+    .toolbar__trigger {
+      @apply flex items-center gap-x-1;
+
+      i {
+        @apply text-xs text-zinc-200;
+      }
+
+      .toolbar__color {
+        @apply h-3.5 w-3.5 rounded-full bg-zinc-400;
+      }
+    }
+  }
+
+  &__file__input {
+    @apply hidden;
+  }
+}
+
+input {
+  @apply border w-full border-zinc-400/10 bg-zinc-900 px-3 py-2 rounded-md text-sm placeholder:text-zinc-600 outline-none focus:border-zinc-200;
+}
+
+.toolbar__inline {
+  animation: fadeInUp 0.2s ease-out;
+}
+
+.toolbar__inline.toolbar__bottom-position {
+  animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
