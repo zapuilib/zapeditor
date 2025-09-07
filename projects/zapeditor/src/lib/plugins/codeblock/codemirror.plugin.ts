@@ -1,6 +1,5 @@
 import { Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 import {
   EditorView as CodeMirror,
   keymap as cmKeymap,
@@ -23,89 +22,15 @@ import { xml } from '@codemirror/lang-xml';
 import { yaml } from '@codemirror/lang-yaml';
 import { defaultKeymap } from '@codemirror/commands';
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
-import { tags } from '@lezer/highlight';
 import { exitCode } from 'prosemirror-commands';
 import { undo, redo } from 'prosemirror-history';
 import { TextSelection, Selection } from 'prosemirror-state';
 import { keymap } from 'prosemirror-keymap';
 import { Compartment } from '@codemirror/state';
 
-const customHighlightStyle = HighlightStyle.define([
-  { tag: tags.keyword, color: '#569cd6' },
-  { tag: tags.controlKeyword, color: '#c586c0' },
-  { tag: tags.operatorKeyword, color: '#569cd6' },
-  { tag: tags.modifier, color: '#569cd6' },
-  { tag: tags.self, color: '#569cd6' },
-  { tag: tags.null, color: '#569cd6' },
-  { tag: tags.atom, color: '#569cd6' },
-  { tag: tags.bool, color: '#569cd6' },
-  { tag: tags.string, color: '#ce9178' },
-  { tag: tags.character, color: '#ce9178' },
-  { tag: tags.content, color: '#ce9178' },
-  { tag: tags.escape, color: '#d7ba7d' },
-  { tag: tags.regexp, color: '#d16969' },
-  { tag: tags.number, color: '#b5cea8' },
-  { tag: tags.integer, color: '#b5cea8' },
-  { tag: tags.float, color: '#b5cea8' },
-  { tag: tags.comment, color: '#6a9955', fontStyle: 'italic' },
-  { tag: tags.lineComment, color: '#6a9955', fontStyle: 'italic' },
-  { tag: tags.blockComment, color: '#6a9955', fontStyle: 'italic' },
-  { tag: tags.docComment, color: '#6a9955', fontStyle: 'italic' },
-  { tag: tags.typeName, color: '#4ec9b0' },
-  { tag: tags.className, color: '#4ec9b0' },
-  { tag: tags.namespace, color: '#4ec9b0' },
-  { tag: tags.macroName, color: '#4ec9b0' },
-  { tag: tags.variableName, color: '#9cdcfe' },
-  { tag: tags.propertyName, color: '#92c5f7' },
-  { tag: tags.attributeName, color: '#92c5f7' },
-  { tag: tags.function(tags.variableName), color: '#dcdcaa' },
-  { tag: tags.function(tags.propertyName), color: '#dcdcaa' },
-  { tag: tags.definition(tags.variableName), color: '#9cdcfe' },
-  { tag: tags.definition(tags.propertyName), color: '#92c5f7' },
-  { tag: tags.tagName, color: '#569cd6' },
-  { tag: tags.attributeValue, color: '#ce9178' },
-  { tag: tags.angleBracket, color: '#808080' },
-  { tag: tags.operator, color: '#d4d4d4' },
-  { tag: tags.punctuation, color: '#d4d4d4' },
-  { tag: tags.separator, color: '#d4d4d4' },
-  { tag: tags.bracket, color: '#ffd700' },
-  { tag: tags.squareBracket, color: '#ffd700' },
-  { tag: tags.paren, color: '#ffd700' },
-  { tag: tags.brace, color: '#ffd700' },
-  { tag: tags.meta, color: '#6a9955' },
-  { tag: tags.annotation, color: '#6a9955' },
-  { tag: tags.processingInstruction, color: '#6a9955' },      
-  { tag: tags.url, color: '#ce9178', textDecoration: 'underline' },
-  { tag: tags.link, color: '#ce9178', textDecoration: 'underline' },
-  { tag: tags.heading, color: '#569cd6', fontWeight: 'bold' },
-  { tag: tags.list, color: '#d4d4d4' },
-  { tag: tags.quote, color: '#6a9955', fontStyle: 'italic' },
-  { tag: tags.emphasis, fontStyle: 'italic' },
-  { tag: tags.strong, fontWeight: 'bold' },
-  { tag: tags.strikethrough, textDecoration: 'line-through' },
-  { tag: tags.monospace, fontFamily: 'Consolas, "Courier New", monospace' },
-  { tag: tags.invalid, color: '#f44747', backgroundColor: '#1e3a8a' },
-]);
+import { AVAILABLE_LANGUAGES, CODEHIGHLIGHT } from './codeblock.constant';
 
-const AVAILABLE_LANGUAGES = [
-  { label: 'TypeScript', value: 'ts' },
-  { label: 'JavaScript', value: 'js' },
-  { label: 'Python', value: 'py' },
-  { label: 'C++', value: 'cpp' },
-  { label: 'Java', value: 'java' },
-  { label: 'Rust', value: 'rust' },
-  { label: 'Go', value: 'go' },
-  { label: 'PHP', value: 'php' },
-  { label: 'SQL', value: 'sql' },
-  { label: 'HTML', value: 'html' },
-  { label: 'CSS', value: 'css' },
-  { label: 'Markdown', value: 'md' },
-  { label: 'JSON', value: 'json' },
-  { label: 'XML', value: 'xml' },
-  { label: 'YAML', value: 'yaml' },
-  { label: 'Shell', value: 'sh' },
-  { label: 'Plain Text', value: 'text' },
-];
+const customHighlightStyle = CODEHIGHLIGHT;
 
 function getLanguageSupport(language: string) {
   switch (language) {
@@ -139,7 +64,7 @@ function getLanguageSupport(language: string) {
     case 'yaml':
       return yaml();
     default:
-      return []; // No syntax highlighting for plain text and shell
+      return [];
   }
 }
 
@@ -205,7 +130,6 @@ class CodeBlockView {
     this.cm.dom.addEventListener('click', () => {
       this.cm.focus();
     });
-    
   }
 
   private createLanguageSelector(toolbarContent: HTMLElement) {
@@ -220,7 +144,8 @@ class CodeBlockView {
     const currentLangDisplay = document.createElement('div');
     currentLangDisplay.className = 'current-language';
     currentLangDisplay.textContent =
-      AVAILABLE_LANGUAGES.find((lang) => lang.value === currentLang)?.label || 'TypeScript';
+      AVAILABLE_LANGUAGES.find((lang) => lang.value === currentLang)?.label ||
+      'TypeScript';
 
     const dropdownArrow = document.createElement('i');
     dropdownArrow.className = 'fa-solid fa-chevron-down';
@@ -279,7 +204,8 @@ class CodeBlockView {
 
     const wrapBtn = document.createElement('button');
     wrapBtn.className = 'wrap-btn';
-    wrapBtn.innerHTML = '<i class="fa-regular fa-arrows-up-down-left-right"></i>';
+    wrapBtn.innerHTML =
+      '<i class="fa-regular fa-arrows-up-down-left-right"></i>';
     wrapBtn.setAttribute('zapEditorTooltip', 'Toggle code block wrap');
 
     wrapBtn.addEventListener('click', (e) => {
@@ -309,17 +235,17 @@ class CodeBlockView {
   private initializeTooltips(wrapBtn: HTMLElement, deleteBtn: HTMLElement) {
     import('../../services/tooltip.service').then(({ TooltipService }) => {
       const tooltipService = new TooltipService();
-      
+
       const wrapTooltip = tooltipService.createTooltip({
         text: 'Wrap',
         delay: 500,
-        element: wrapBtn
+        element: wrapBtn,
       });
-      
+
       const deleteTooltip = tooltipService.createTooltip({
         text: 'Delete',
         delay: 500,
-        element: deleteBtn
+        element: deleteBtn,
       });
 
       (wrapBtn as any).__tooltipCleanup = wrapTooltip;
@@ -342,7 +268,7 @@ class CodeBlockView {
 
     const newNode = currentNode.type.create(
       { language, wrapped: currentNode.attrs['wrapped'] },
-      textContent ? [state.schema.text(textContent)] : [],
+      textContent ? [state.schema.text(textContent)] : []
     );
 
     const tr = state.tr.replaceWith(pos, pos + currentNode.nodeSize, newNode);
@@ -351,7 +277,9 @@ class CodeBlockView {
     this.node = newNode;
 
     this.cm.dispatch({
-      effects: [this.languageCompartment.reconfigure(getLanguageSupport(language))],
+      effects: [
+        this.languageCompartment.reconfigure(getLanguageSupport(language)),
+      ],
     });
   }
 
@@ -384,10 +312,14 @@ class CodeBlockView {
           language: node.attrs['language'] || 'ts',
           wrapped: false,
         },
-        node.content,
+        node.content
       );
 
-      const tr = state.tr.replaceWith(actualPos, actualPos + node.nodeSize, newCodeBlock);
+      const tr = state.tr.replaceWith(
+        actualPos,
+        actualPos + node.nodeSize,
+        newCodeBlock
+      );
       tr.setSelection(TextSelection.near(tr.doc.resolve(actualPos)));
       dispatch(tr);
     } else {
@@ -396,10 +328,14 @@ class CodeBlockView {
           language: node.attrs['language'] || 'ts',
           wrapped: true,
         },
-        node.content,
+        node.content
       );
 
-      const tr = state.tr.replaceWith(actualPos, actualPos + node.nodeSize, newCodeBlock);
+      const tr = state.tr.replaceWith(
+        actualPos,
+        actualPos + node.nodeSize,
+        newCodeBlock
+      );
       tr.setSelection(TextSelection.near(tr.doc.resolve(actualPos)));
       dispatch(tr);
     }
@@ -429,14 +365,22 @@ class CodeBlockView {
     const paragraph = state.schema.nodes['paragraph'];
     const newParagraph = paragraph.create();
 
-    const tr = state.tr.replaceWith(actualPos, actualPos + node.nodeSize, newParagraph);
+    const tr = state.tr.replaceWith(
+      actualPos,
+      actualPos + node.nodeSize,
+      newParagraph
+    );
     tr.setSelection(TextSelection.near(tr.doc.resolve(actualPos)));
     dispatch(tr);
   }
 
   setWrapping(wrapped: boolean) {
     this.cm.dispatch({
-      effects: [this.wrappingCompartment.reconfigure(wrapped ? CodeMirror.lineWrapping : [])],
+      effects: [
+        this.wrappingCompartment.reconfigure(
+          wrapped ? CodeMirror.lineWrapping : []
+        ),
+      ],
     });
   }
 
@@ -471,21 +415,36 @@ class CodeBlockView {
       if (update.docChanged || pmSel.from != selFrom || pmSel.to != selTo) {
         let tr = this.view.state.tr;
         update.changes.iterChanges(
-          (fromA: number, toA: number, fromB: number, toB: number, text: any) => {
+          (
+            fromA: number,
+            toA: number,
+            fromB: number,
+            toB: number,
+            text: any
+          ) => {
             const startPos = offset + fromA;
             const endPos = offset + toA;
 
-            if (startPos < 0 || endPos < 0 || startPos > docSize || endPos > docSize) {
+            if (
+              startPos < 0 ||
+              endPos < 0 ||
+              startPos > docSize ||
+              endPos > docSize
+            ) {
               return;
             }
 
             if (text.length) {
-              tr.replaceWith(startPos, endPos, this.view.state.schema.text(text.toString()));
+              tr.replaceWith(
+                startPos,
+                endPos,
+                this.view.state.schema.text(text.toString())
+              );
             } else {
               tr.delete(startPos, endPos);
             }
             offset += toB - fromB - (toA - fromA);
-          },
+          }
         );
 
         if (
@@ -499,8 +458,7 @@ class CodeBlockView {
 
         this.view.dispatch(tr);
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   setSelection(anchor: number, head: number) {
@@ -553,7 +511,11 @@ class CodeBlockView {
             const paragraph = view.state.schema.nodes['paragraph'];
             const newParagraph = paragraph.create();
 
-            const tr = view.state.tr.replaceWith(pos, pos + codeBlockSize, newParagraph);
+            const tr = view.state.tr.replaceWith(
+              pos,
+              pos + codeBlockSize,
+              newParagraph
+            );
             tr.setSelection(TextSelection.near(tr.doc.resolve(pos)));
             view.dispatch(tr);
             view.focus();
@@ -562,9 +524,21 @@ class CodeBlockView {
           return false;
         },
       },
-      { key: 'Ctrl-z', mac: 'Cmd-z', run: () => undo(view.state, view.dispatch) },
-      { key: 'Shift-Ctrl-z', mac: 'Shift-Cmd-z', run: () => redo(view.state, view.dispatch) },
-      { key: 'Ctrl-y', mac: 'Cmd-y', run: () => redo(view.state, view.dispatch) },
+      {
+        key: 'Ctrl-z',
+        mac: 'Cmd-z',
+        run: () => undo(view.state, view.dispatch),
+      },
+      {
+        key: 'Shift-Ctrl-z',
+        mac: 'Shift-Cmd-z',
+        run: () => redo(view.state, view.dispatch),
+      },
+      {
+        key: 'Ctrl-y',
+        mac: 'Cmd-y',
+        run: () => redo(view.state, view.dispatch),
+      },
     ];
   }
 
@@ -609,7 +583,10 @@ class CodeBlockView {
         let curEnd = curText.length;
         let newEnd = newText.length;
 
-        while (start < curEnd && curText.charCodeAt(start) == newText.charCodeAt(start)) {
+        while (
+          start < curEnd &&
+          curText.charCodeAt(start) == newText.charCodeAt(start)
+        ) {
           ++start;
         }
         while (
@@ -630,7 +607,6 @@ class CodeBlockView {
           },
         });
         this.updating = false;
-        
       }
       return true;
     } catch (error) {
@@ -647,19 +623,17 @@ class CodeBlockView {
   }
 
   destroy() {
-    // Cleanup tooltips
     const wrapBtn = this.dom.querySelector('.wrap-btn') as HTMLElement;
     const deleteBtn = this.dom.querySelector('.delete-btn') as HTMLElement;
-    
+
     if (wrapBtn && (wrapBtn as any).__tooltipCleanup) {
       (wrapBtn as any).__tooltipCleanup();
     }
-    
+
     if (deleteBtn && (deleteBtn as any).__tooltipCleanup) {
       (deleteBtn as any).__tooltipCleanup();
     }
 
-    // Cleanup CodeMirror
     if (this.cm) {
       this.cm.destroy();
     }
@@ -673,7 +647,7 @@ function arrowHandler(dir: string) {
       let $head = state.selection.$head;
       let nextPos = Selection.near(
         state.doc.resolve(side > 0 ? $head.after() : $head.before()),
-        side,
+        side
       );
       if (nextPos.$head && nextPos.$head.parent.type.name == 'code_block') {
         dispatch(state.tr.setSelection(nextPos));

@@ -2,9 +2,10 @@ import { Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { calculateSmartPosition } from '../../utils/smart-positioning.util';
 
-/**
- * Link hover plugin - shows hovercard when hovering over links
- */
+const ANIMATION_DURATION = 200;
+const TOOLTIP_DELAY = 500;
+const OFFSET_SCREEN_POSITION = -9999;
+
 export function linkHoverPlugin() {
   let hovercard: HTMLElement | null = null;
   let currentLink: HTMLAnchorElement | null = null;
@@ -31,49 +32,46 @@ export function linkHoverPlugin() {
     return card;
   }
 
+  function createButton(text: string, className: string, onClick: (e: MouseEvent) => void): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.textContent = text;
+    button.className = className;
+    button.onclick = (e) => {
+      e.stopPropagation();
+      onClick(e);
+    };
+    return button;
+  }
+
+  function createIconButton(icon: string, tooltip: string, className: string, onClick: (e: MouseEvent) => void): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.innerHTML = `<i class="fa-regular ${icon}"></i>`;
+    button.setAttribute('zapEditorTooltip', tooltip);
+    button.className = className;
+    button.onclick = (e) => {
+      e.stopPropagation();
+      onClick(e);
+    };
+    return button;
+  }
+
   function createNormalContent(): DocumentFragment {
     const fragment = document.createDocumentFragment();
     
-    // Edit button
-    const editBtn = document.createElement('button');
-    editBtn.textContent = 'Edit link';
-    editBtn.className = 'prosemirror__link__card__edit__button';
-    editBtn.onclick = (e) => {
-      e.stopPropagation();
-      showEditMode();
-    };
-
-    // Separator
+    const editBtn = createButton('Edit link', 'prosemirror__link__card__edit__button', () => showEditMode());
+    
     const separator = document.createElement('div');
     separator.className = 'prosemirror__link__card__separator';
 
-    // Actions container
     const actions = document.createElement('div');
     actions.className = 'prosemirror__link__card__actions';
 
-    // Unlink button
-    const unlinkBtn = document.createElement('button');
-    unlinkBtn.innerHTML = '<i class="fa-regular fa-link-slash"></i>';
-    unlinkBtn.setAttribute('zapEditorTooltip', 'Remove link');
-    unlinkBtn.className = 'prosemirror__link__card__unlink';
-    unlinkBtn.onclick = (e) => {
-      e.stopPropagation();
-      removeLink();
-    };
+    const unlinkBtn = createIconButton('fa-link-slash', 'Remove link', 'prosemirror__link__card__unlink', () => removeLink());
     
-    // Icon separator
     const iconSep = document.createElement('div');
     iconSep.className = 'prosemirror__link__card__icon__separator';
     
-    // New tab button
-    const newTabBtn = document.createElement('button');
-    newTabBtn.innerHTML = '<i class="fa-regular fa-external-link-alt"></i>';
-    newTabBtn.setAttribute('zapEditorTooltip', 'Open in new tab');
-    newTabBtn.className = 'prosemirror__link__card__newtab';
-    newTabBtn.onclick = (e) => {
-      e.stopPropagation();
-      openInNewTab();
-    };
+    const newTabBtn = createIconButton('fa-external-link-alt', 'Open in new tab', 'prosemirror__link__card__newtab', () => openInNewTab());
     
     actions.appendChild(unlinkBtn);
     actions.appendChild(iconSep);
@@ -86,65 +84,54 @@ export function linkHoverPlugin() {
     return fragment;
   }
 
+  function createInputGroup(labelText: string, placeholder: string, value: string, className: string): HTMLElement {
+    const group = document.createElement('div');
+    group.className = 'prosemirror__link__card__input__group';
+    
+    const label = document.createElement('label');
+    label.textContent = labelText;
+    label.className = 'prosemirror__link__card__input__label';
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = placeholder;
+    input.className = 'prosemirror__link__card__input';
+    input.value = value;
+    
+    group.appendChild(label);
+    group.appendChild(input);
+    
+    return group;
+  }
+
   function createEditContent(): DocumentFragment {
     const fragment = document.createDocumentFragment();
     
     const form = document.createElement('div');
     form.className = 'prosemirror__link__card__edit__form';
     
-    // URL input
-    const urlGroup = document.createElement('div');
-    urlGroup.className = 'prosemirror__link__card__input__group';
+    const urlGroup = createInputGroup(
+      'Type or paste a link',
+      'https://',
+      currentLink?.getAttribute('href') || '',
+      'prosemirror__link__card__input__group'
+    );
     
-    const urlLabel = document.createElement('label');
-    urlLabel.textContent = 'Type or paste a link';
-    urlLabel.className = 'prosemirror__link__card__input__label';
+    const textGroup = createInputGroup(
+      'Display text (optional)',
+      'Link text',
+      currentLink?.textContent || '',
+      'prosemirror__link__card__input__group'
+    );
     
-    const urlInput = document.createElement('input');
-    urlInput.type = 'text';
-    urlInput.placeholder = 'https://';
-    urlInput.className = 'prosemirror__link__card__input';
-    urlInput.value = currentLink?.getAttribute('href') || '';
-    
-    urlGroup.appendChild(urlLabel);
-    urlGroup.appendChild(urlInput);
-    
-    // Text input
-    const textGroup = document.createElement('div');
-    textGroup.className = 'prosemirror__link__card__input__group';
-    
-    const textLabel = document.createElement('label');
-    textLabel.textContent = 'Display text (optional)';
-    textLabel.className = 'prosemirror__link__card__input__label';
-    
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.placeholder = 'Link text';
-    textInput.className = 'prosemirror__link__card__input';
-    textInput.value = currentLink?.textContent || '';
-    
-    textGroup.appendChild(textLabel);
-    textGroup.appendChild(textInput);
-    
-    // Buttons
     const buttonGroup = document.createElement('div');
     buttonGroup.className = 'prosemirror__link__card__button__group';
     
-    const updateBtn = document.createElement('button');
-    updateBtn.textContent = 'Update';
-    updateBtn.className = 'prosemirror__link__card__update';
-    updateBtn.onclick = (e) => {
-      e.stopPropagation();
-      updateLink(urlInput.value, textInput.value);
-    };
+    const urlInput = urlGroup.querySelector('input') as HTMLInputElement;
+    const textInput = textGroup.querySelector('input') as HTMLInputElement;
     
-    const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.className = 'prosemirror__link__card__cancel';
-    cancelBtn.onclick = (e) => {
-      e.stopPropagation();
-      showNormalMode();
-    };
+    const updateBtn = createButton('Update', 'prosemirror__link__card__update', () => updateLink(urlInput.value, textInput.value));
+    const cancelBtn = createButton('Cancel', 'prosemirror__link__card__cancel', () => showNormalMode());
     
     buttonGroup.appendChild(updateBtn);
     buttonGroup.appendChild(cancelBtn);
@@ -192,7 +179,7 @@ export function linkHoverPlugin() {
         if (tooltipText) {
           const cleanupFn = tooltipService.createTooltip({
             text: tooltipText,
-            delay: 500,
+            delay: TOOLTIP_DELAY,
             element: element as HTMLElement
           });
           
@@ -202,19 +189,10 @@ export function linkHoverPlugin() {
     });
   }
 
-  function removeLink(): void {
-    if (!currentLink) return;
-    
-    const view = getCurrentView();
-    if (!view) return;
-    
-    const pos = view.posAtDOM(currentLink, 0);
-    if (pos === null) return;
-    
+  function findLinkRange(view: EditorView, pos: number): { from: number; to: number } | null {
     const linkMark = view.state.schema.marks['link'];
-    if (!linkMark) return;
+    if (!linkMark) return null;
     
-    // Find the range of the link
     let from = pos;
     let to = pos;
     
@@ -236,10 +214,24 @@ export function linkHoverPlugin() {
       return true;
     });
     
-    if (to > from) {
-      const tr = view.state.tr.removeMark(from, to, linkMark);
-      view.dispatch(tr);
-    }
+    return to > from ? { from, to } : null;
+  }
+
+  function removeLink(): void {
+    if (!currentLink) return;
+    
+    const view = getCurrentView();
+    if (!view) return;
+    
+    const pos = view.posAtDOM(currentLink, 0);
+    if (pos === null) return;
+    
+    const linkRange = findLinkRange(view, pos);
+    if (!linkRange) return;
+    
+    const linkMark = view.state.schema.marks['link'];
+    const tr = view.state.tr.removeMark(linkRange.from, linkRange.to, linkMark);
+    view.dispatch(tr);
     
     hideHoverCard();
   }
@@ -250,51 +242,23 @@ export function linkHoverPlugin() {
     const view = getCurrentView();
     if (!view) return;
     
-      const pos = view.posAtDOM(currentLink, 0);
+    const pos = view.posAtDOM(currentLink, 0);
     if (pos === null) return;
     
-        const linkMark = view.state.schema.marks['link'];
-    if (!linkMark) return;
+    const linkRange = findLinkRange(view, pos);
+    if (!linkRange) return;
     
-    // Find the range of the link
-          let from = pos;
-          let to = pos;
-          
-    view.state.doc.descendants((node, nodePos) => {
-      if (nodePos < pos) return true;
-            
-            node.marks.forEach(mark => {
-        if (mark.type === linkMark) {
-          const start = nodePos;
-          const end = nodePos + node.nodeSize;
-          
-          if (pos >= start && pos < end) {
-                  from = start;
-                  to = end;
-                }
-              }
-            });
-            
-            return true;
-          });
-          
-          if (to > from) {
-            let tr = view.state.tr;
-            
-      // Remove old link mark
-            tr = tr.removeMark(from, to, linkMark);
-      
-      // Add new link mark
-            tr = tr.addMark(from, to, linkMark.create({ href }));
-            
-      // Update text if provided
-            if (text && text !== currentLink.textContent) {
-              tr = tr.replaceWith(from, to, view.state.schema.text(text, [linkMark.create({ href })]));
-            }
-            
-            view.dispatch(tr);
-          }
+    const linkMark = view.state.schema.marks['link'];
+    let tr = view.state.tr;
     
+    tr = tr.removeMark(linkRange.from, linkRange.to, linkMark);
+    tr = tr.addMark(linkRange.from, linkRange.to, linkMark.create({ href }));
+    
+    if (text && text !== currentLink.textContent) {
+      tr = tr.replaceWith(linkRange.from, linkRange.to, view.state.schema.text(text, [linkMark.create({ href })]));
+    }
+    
+    view.dispatch(tr);
     hideHoverCard();
   }
 
@@ -308,141 +272,7 @@ export function linkHoverPlugin() {
     hideHoverCard();
   }
 
-  function findLinkElement(view: EditorView, pos: number): HTMLAnchorElement | null {
-    const domNode = view.nodeDOM(pos);
-    if (!domNode) return null;
-    
-    let currentElement: HTMLElement | null = domNode as HTMLElement;
-    
-    while (currentElement && currentElement !== view.dom) {
-      if (currentElement.tagName === 'A') {
-        return currentElement as HTMLAnchorElement;
-      }
-      currentElement = currentElement.parentElement;
-    }
-    
-    return null;
-  }
-
-  function showHoverCard(view: EditorView, pos: number): void {
-    console.log('🚀 showHoverCard called with pos:', pos, 'isPositioning:', isPositioning);
-    
-    if (isPositioning) {
-      console.log('⏸️ Already positioning, skipping...');
-      return;
-    }
-    
-    if (!hovercard) {
-      hovercard = createHoverCard();
-      document.body.appendChild(hovercard);
-    }
-    
-    isPositioning = true;
-    
-    // Show normal mode first to get proper dimensions
-    showNormalMode();
-    
-    // Position the hovercard off-screen initially to get dimensions
-    hovercard.style.left = '-9999px';
-    hovercard.style.top = '-9999px';
-    hovercard.style.display = 'flex';
-    
-    // Wait for the hovercard to be rendered and get its dimensions
-    requestAnimationFrame(() => {
-      if (!hovercard) {
-        isPositioning = false;
-        return;
-      }
-      
-      // Use double requestAnimationFrame to ensure stable coordinates
-      requestAnimationFrame(() => {
-        if (!hovercard) {
-          isPositioning = false;
-          return;
-        }
-        
-        // Use ProseMirror coordinates directly - this gives us the exact cursor position
-        const coords = view.coordsAtPos(pos);
-        console.log('🔍 ProseMirror coords:', coords);
-        
-        // Check if coordinates look stable (not at the left edge of line)
-        // If left is too small (like 57), wait for stable coordinates
-        if (coords.left < 100) {
-          console.log('⏳ Coordinates not stable yet, waiting...');
-          // Wait another frame for stable coordinates
-          requestAnimationFrame(() => {
-            if (!hovercard) {
-              isPositioning = false;
-              return;
-            }
-            
-            const stableCoords = view.coordsAtPos(pos);
-            console.log('🔍 Stable ProseMirror coords:', stableCoords);
-            
-            if (stableCoords.left < 100) {
-              console.log('⚠️ Still not stable, using current coordinates');
-            }
-            
-            positionHoverCard(stableCoords);
-          });
-        } else {
-          console.log('✅ Coordinates look stable, positioning now');
-          positionHoverCard(coords);
-        }
-      });
-    });
-    
-    function positionHoverCard(coords: any) {
-      if (!hovercard) {
-        isPositioning = false;
-        return;
-      }
-      
-      const triggerRect = {
-        left: coords.left,
-        top: coords.top,
-        right: coords.right,
-        bottom: coords.bottom,
-        width: coords.right - coords.left,
-        height: coords.bottom - coords.top
-      } as DOMRect;
-      
-      console.log('📐 Trigger rect:', triggerRect);
-      
-      // Use smart positioning utility
-      const position = calculateSmartPosition(triggerRect, hovercard, 'bottom', 8);
-      console.log('🎯 Calculated position:', position);
-      
-      // Position the hovercard
-      hovercard.style.left = `${position.x}px`;
-      hovercard.style.top = `${position.y}px`;
-      
-      console.log('📍 Final hovercard position:', {
-        left: hovercard.style.left,
-        top: hovercard.style.top
-      });
-      
-      // Trigger slide-in animation
-      requestAnimationFrame(() => {
-        if (hovercard) {
-          hovercard.style.opacity = '1';
-          hovercard.style.transform = 'translateY(0)';
-        }
-        isPositioning = false;
-      });
-    }
-    
-    // Add click outside listener
-    setTimeout(() => {
-      document.addEventListener('click', handleClickOutside);
-    }, 0);
-  }
-
-  function hideHoverCard(): void {
-    console.log('🛑 hideHoverCard called');
-    isPositioning = false;
-    
-    // Clear any pending timeouts
+  function clearTimeouts(): void {
     if (hideTimeout) {
       clearTimeout(hideTimeout);
       hideTimeout = null;
@@ -451,6 +281,11 @@ export function linkHoverPlugin() {
       clearTimeout(showTimeout);
       showTimeout = null;
     }
+  }
+
+  function hideHoverCard(): void {
+    isPositioning = false;
+    clearTimeouts();
     
     if (hovercard) {
       const elementsWithTooltips = hovercard.querySelectorAll('[zapEditorTooltip]');
@@ -460,17 +295,16 @@ export function linkHoverPlugin() {
         }
       });
 
-      // Trigger slide-out animation
       hovercard.style.opacity = '0';
       hovercard.style.transform = 'translateY(-10px)';
       
-      // Hide after animation completes
       setTimeout(() => {
         if (hovercard) {
           hovercard.style.display = 'none';
         }
-      }, 200); // Match the transition duration
+      }, ANIMATION_DURATION);
     }
+    
     document.removeEventListener('click', handleClickOutside);
     currentLink = null;
   }
@@ -480,10 +314,8 @@ export function linkHoverPlugin() {
     
     const target = event.target as HTMLElement;
     
-    // Don't hide if clicking inside the hovercard
     if (hovercard.contains(target)) return;
     
-    // Don't hide if clicking on a link
     let currentElement: HTMLElement | null = target;
     while (currentElement && currentElement !== document.body) {
       if (currentElement.tagName === 'A') {
@@ -495,17 +327,14 @@ export function linkHoverPlugin() {
     hideHoverCard();
   }
 
-  function showHoverCardOnLinkHover(event: MouseEvent, linkElement: HTMLAnchorElement): void {
-    console.log('🚀 showHoverCardOnLinkHover called');
+  function showHoverCardOnCursor(view: EditorView, pos: number): void {
+    clearTimeouts();
     
-    // Clear any pending hide timeout
-    if (hideTimeout) {
-      clearTimeout(hideTimeout);
-      hideTimeout = null;
-    }
+    if (isPositioning) return;
     
-    if (isPositioning) {
-      console.log('⏸️ Already positioning, skipping...');
+    const linkElement = findLinkElement(view, pos);
+    if (!linkElement) {
+      hideHoverCard();
       return;
     }
     
@@ -513,178 +342,117 @@ export function linkHoverPlugin() {
       hovercard = createHoverCard();
       document.body.appendChild(hovercard);
       
-      // Add mouse event listeners to the hover card itself for tight hover area
       hovercard.addEventListener('mouseenter', () => {
-        console.log('🖱️ Mouse entered hover card');
-        // Clear any pending hide timeout when mouse enters hover card
-        if (hideTimeout) {
-          clearTimeout(hideTimeout);
-          hideTimeout = null;
-        }
+        clearTimeouts();
       });
       
       hovercard.addEventListener('mouseleave', () => {
-        console.log('🖱️ Mouse left hover card');
-        // Hide when mouse leaves hover card with small delay
         hideTimeout = window.setTimeout(() => {
-          console.log('⏰ Hiding hover card after delay');
           hideHoverCard();
-        }, 200); // Increased delay
+        }, ANIMATION_DURATION);
       });
     }
     
     isPositioning = true;
     currentLink = linkElement;
     
-    // Show normal mode first to get proper dimensions
     showNormalMode();
     
-    // Position the hovercard off-screen initially to get dimensions
-    hovercard.style.left = '-9999px';
-    hovercard.style.top = '-9999px';
+    hovercard.style.left = `${OFFSET_SCREEN_POSITION}px`;
+    hovercard.style.top = `${OFFSET_SCREEN_POSITION}px`;
     hovercard.style.display = 'flex';
     
-    // Wait for the hovercard to be rendered and get its dimensions
     requestAnimationFrame(() => {
       if (!hovercard) {
         isPositioning = false;
         return;
       }
       
-      // Use the link element's bounding rectangle for tight positioning
+      const coords = view.coordsAtPos(pos);
       const rect = linkElement.getBoundingClientRect();
-      const coords = {
+      
+      const triggerRect = {
         left: rect.left,
         top: rect.top,
         right: rect.right,
         bottom: rect.bottom,
         width: rect.width,
         height: rect.height
-      };
+      } as DOMRect;
       
-      console.log('🔗 Using link element coords for tight positioning:', coords);
-      positionHoverCardTight(coords);
+      const position = calculateSmartPosition(triggerRect, hovercard, 'bottom', 8);
+      
+      hovercard.style.left = `${position.x}px`;
+      hovercard.style.top = `${position.y}px`;
+      hovercard.style.display = 'flex';
+      hovercard.style.opacity = '1';
+      hovercard.style.transform = 'translateY(0)';
+      
+      isPositioning = false;
     });
   }
 
-  function positionHoverCardTight(coords: any) {
-    if (!hovercard) {
-      isPositioning = false;
-      return;
-    }
-    
-    const triggerRect = {
-      left: coords.left,
-      top: coords.top,
-      right: coords.right,
-      bottom: coords.bottom,
-      width: coords.right - coords.left,
-      height: coords.bottom - coords.top,
-      x: coords.left,
-      y: coords.top
-    } as DOMRect;
-    
-    // Position very close to the link (2px gap)
-    const position = calculateSmartPosition(triggerRect, hovercard, 'bottom', 0);
-    
-    hovercard.style.left = `${position.x}px`;
-    hovercard.style.top = `${position.y}px`;
-    hovercard.style.display = 'flex';
-    hovercard.style.opacity = '1';
-    hovercard.style.transform = 'translateY(0)';
-    
-    isPositioning = false;
-  }
 
   function getCurrentView(): EditorView | null {
     return (window as any).currentEditorView || null;
   }
 
+  function findLinkElement(view: EditorView, pos: number): HTMLAnchorElement | null {
+    try {
+      const coords = view.coordsAtPos(pos);
+      const elementAtPoint = document.elementFromPoint(coords.left, coords.top);
+      
+      if (!elementAtPoint) return null;
+      
+      let currentElement: HTMLElement | null = elementAtPoint as HTMLElement;
+      
+      while (currentElement && currentElement !== view.dom) {
+        if (currentElement.tagName === 'A') {
+          return currentElement as HTMLAnchorElement;
+        }
+        currentElement = currentElement.parentElement;
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function findLinkInElement(element: HTMLElement, editorElement: HTMLElement): HTMLAnchorElement | null {
+    let currentElement: HTMLElement | null = element;
+    
+    while (currentElement && currentElement !== editorElement) {
+      if (currentElement.tagName === 'A') {
+        return currentElement as HTMLAnchorElement;
+      }
+      currentElement = currentElement.parentElement;
+    }
+    
+    return null;
+  }
+
   return new Plugin({
     view: (editorView) => {
       (window as any).currentEditorView = editorView;
-      const editorElement = editorView.dom;
-      
-      const handleMouseMove = (event: MouseEvent) => {
-        // Clear any pending hide timeout
-        if (hideTimeout) {
-          clearTimeout(hideTimeout);
-          hideTimeout = null;
-        }
-        
-        const target = event.target as HTMLElement;
-        
-        // Check if mouse is over the hover card itself - don't do anything
-        if (hovercard && hovercard.contains(target)) {
-          console.log('🖱️ Mouse over hover card, keeping it visible');
-          return; // Don't hide if mouse is over the hover card
-        }
-        
-        // Find the link element under the mouse
-        let linkElement: HTMLAnchorElement | null = null;
-        let currentElement: HTMLElement | null = target;
-        
-        while (currentElement && currentElement !== editorElement) {
-          if (currentElement.tagName === 'A') {
-            linkElement = currentElement as HTMLAnchorElement;
-            break;
-          }
-          currentElement = currentElement.parentElement;
-        }
-        
-        if (linkElement) {
-          const href = linkElement.getAttribute('href');
-          if (href) {
-            console.log('🔗 Mouse over link, showing hover card');
-            currentLink = linkElement;
-            // Clear any pending show timeout
-            if (showTimeout) {
-              clearTimeout(showTimeout);
-            }
-            // Show immediately when over link
-            showHoverCardOnLinkHover(event, linkElement);
-          }
-        } else {
-          // Only hide if we're not currently showing a hover card
-          // or if we're not over the current link
-          if (hovercard && (!currentLink || !currentLink.contains(target))) {
-            // Double check that mouse is not over the hover card
-            if (!hovercard.contains(target)) {
-              console.log('🚫 Mouse not over link or hover card, scheduling hide');
-              // Add small delay before hiding to allow mouse to move to hover card
-              hideTimeout = window.setTimeout(() => {
-                hideHoverCard();
-              }, 150); // Increased delay
-            } else {
-              console.log('🖱️ Mouse over hover card, not hiding');
-            }
-          }
-        }
-      };
-      
-      const handleMouseLeave = () => {
-        // Add small delay before hiding
-        hideTimeout = window.setTimeout(() => {
-          hideHoverCard();
-        }, 150);
-      };
-      
-      // Add event listeners
-      editorElement.addEventListener('mousemove', handleMouseMove);
-      editorElement.addEventListener('mouseleave', handleMouseLeave);
       
       return {
         update: (view: EditorView) => {
-          // Hide hover card during text selection
           if (view.state.selection.from !== view.state.selection.to) {
             hideHoverCard();
             return;
           }
+          
+          const pos = view.state.selection.from;
+          const linkElement = findLinkElement(view, pos);
+          
+          if (linkElement) {
+            showHoverCardOnCursor(view, pos);
+          } else {
+            hideHoverCard();
+          }
         },
         destroy: () => {
-          // Clean up event listeners
-          editorElement.removeEventListener('mousemove', handleMouseMove);
-          editorElement.removeEventListener('mouseleave', handleMouseLeave);
           hideHoverCard();
           (window as any).currentEditorView = null;
         }
@@ -694,25 +462,14 @@ export function linkHoverPlugin() {
       handleDOMEvents: {
         click: (view: EditorView, event: MouseEvent) => {
           const target = event.target as HTMLElement;
-          
-          // Find the clicked link
-          let linkElement: HTMLAnchorElement | null = null;
-          let currentElement: HTMLElement | null = target;
-          
-          while (currentElement && currentElement !== view.dom) {
-            if (currentElement.tagName === 'A') {
-              linkElement = currentElement as HTMLAnchorElement;
-              break;
-            }
-            currentElement = currentElement.parentElement;
-          }
+          const linkElement = findLinkInElement(target, view.dom);
           
           if (linkElement) {
             const href = linkElement.getAttribute('href');
             if (href) {
               currentLink = linkElement;
-              // Use mouse position for click too
-              showHoverCardOnLinkHover(event, linkElement);
+              const pos = view.state.selection.from;
+              showHoverCardOnCursor(view, pos);
             }
           }
           
