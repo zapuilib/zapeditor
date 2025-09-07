@@ -1,6 +1,17 @@
 import { Plugin } from 'prosemirror-state';
 import { Node as ProseMirrorNode } from 'prosemirror-model';
 import { EditorView, NodeView } from 'prosemirror-view';
+import { MEDIA_CONSTANTS } from './media.constant';
+import { 
+  getFileIcon, 
+  formatFileSize, 
+  createToolbarButton, 
+  cleanupTooltips, 
+  initializeTooltips, 
+  downloadFile, 
+  calculateResizeConstraints, 
+  calculateNewDimensions 
+} from './media.util';
 
 export function mediaPlugin() {
   return new Plugin({
@@ -17,13 +28,14 @@ export function mediaPlugin() {
 class MediaNodeView implements NodeView {
   public dom: HTMLElement;
   public contentDOM?: HTMLElement;
+  
   private isUploading = false;
   private isUploaded = false;
   private mediaUrl = '';
   private mediaType: 'image' | 'video' | 'document' = 'image';
   private mediaAlt = '';
-  private mediaWidth = 300;
-  private mediaHeight = 200;
+  private mediaWidth: number = MEDIA_CONSTANTS.DEFAULT_WIDTH;
+  private mediaHeight: number = MEDIA_CONSTANTS.DEFAULT_HEIGHT;
 
   constructor(
     private node: ProseMirrorNode,
@@ -37,12 +49,10 @@ class MediaNodeView implements NodeView {
   private createDOM(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'media__node';
-
     container.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
     });
-
     return container;
   }
 
@@ -99,6 +109,16 @@ class MediaNodeView implements NodeView {
     container.style.width = `${this.mediaWidth}px`;
     container.style.height = `${this.mediaHeight}px`;
 
+    this.createMediaElement(container);
+    this.createResizeHandles(container);
+    this.createToolbar(container);
+    this.setupEventListeners(container);
+    this.initializeTooltips(container);
+
+    this.dom.appendChild(container);
+  }
+
+  private createMediaElement(container: HTMLElement) {
     if (this.mediaType === 'image') {
       const img = document.createElement('img');
       img.className = 'media__uploaded__img';
@@ -115,19 +135,23 @@ class MediaNodeView implements NodeView {
       const documentPreview = this.createDocumentPreview();
       container.appendChild(documentPreview);
     }
+  }
 
+  private createResizeHandles(container: HTMLElement) {
     if (this.mediaType === 'image' || this.mediaType === 'video') {
-      const leftResizeHandle = document.createElement('div');
-      leftResizeHandle.className = 'media__resize__handle media__resize__handle--left';
-      leftResizeHandle.setAttribute('zapEditorTooltip', 'Resize');
-      container.appendChild(leftResizeHandle);
+      const leftHandle = document.createElement('div');
+      leftHandle.className = 'media__resize__handle media__resize__handle__left';
+      leftHandle.setAttribute('zapEditorTooltip', 'Resize');
+      container.appendChild(leftHandle);
 
-      const rightResizeHandle = document.createElement('div');
-      rightResizeHandle.className = 'media__resize__handle media__resize__handle--right';
-      rightResizeHandle.setAttribute('zapEditorTooltip', 'Resize');
-      container.appendChild(rightResizeHandle);
+      const rightHandle = document.createElement('div');
+      rightHandle.className = 'media__resize__handle media__resize__handle__right';
+      rightHandle.setAttribute('zapEditorTooltip', 'Resize');
+      container.appendChild(rightHandle);
     }
+  }
 
+  private createToolbar(container: HTMLElement) {
     const toolbar = document.createElement('div');
     toolbar.className = 'media__toolbar';
 
@@ -155,49 +179,61 @@ class MediaNodeView implements NodeView {
     toolbar.appendChild(deleteBtn);
 
     container.appendChild(toolbar);
+  }
 
-    this.initializeTooltips(container);
-
+  private setupEventListeners(container: HTMLElement) {
+    const toolbar = container.querySelector('.media__toolbar') as HTMLElement;
+    
     container.addEventListener('mouseenter', () => {
-      if (this.mediaType === 'image' || this.mediaType === 'video') {
-        const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
-        const rightHandle = container.querySelector('.media__resize__handle--right') as HTMLElement;
-        if (leftHandle) leftHandle.style.opacity = '1';
-        if (rightHandle) rightHandle.style.opacity = '1';
-      }
-      toolbar.style.opacity = '1';
+      this.showControls(container, toolbar);
     });
 
     container.addEventListener('mouseleave', () => {
-      if (this.mediaType === 'image' || this.mediaType === 'video') {
-        const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
-        const rightHandle = container.querySelector('.media__resize__handle--right') as HTMLElement;
-        if (leftHandle) leftHandle.style.opacity = '0';
-        if (rightHandle) rightHandle.style.opacity = '0';
-      }
-      toolbar.style.opacity = '0';
+      this.hideControls(container, toolbar);
     });
 
     if (this.mediaType === 'image' || this.mediaType === 'video') {
-      const leftHandle = container.querySelector('.media__resize__handle--left') as HTMLElement;
-      const rightHandle = container.querySelector('.media__resize__handle--right') as HTMLElement;
-      
-      if (leftHandle) {
-        leftHandle.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          this.startResize(e, 'left');
-        });
-      }
+      this.setupResizeHandles(container);
+    }
+  }
 
-      if (rightHandle) {
-        rightHandle.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          this.startResize(e, 'right');
-        });
-      }
+  private showControls(container: HTMLElement, toolbar: HTMLElement) {
+    if (this.mediaType === 'image' || this.mediaType === 'video') {
+      const leftHandle = container.querySelector('.media__resize__handle__left') as HTMLElement;
+      const rightHandle = container.querySelector('.media__resize__handle__right') as HTMLElement;
+      if (leftHandle) leftHandle.style.opacity = '1';
+      if (rightHandle) rightHandle.style.opacity = '1';
+    }
+    toolbar.style.opacity = '1';
+  }
+
+  private hideControls(container: HTMLElement, toolbar: HTMLElement) {
+    if (this.mediaType === 'image' || this.mediaType === 'video') {
+      const leftHandle = container.querySelector('.media__resize__handle__left') as HTMLElement;
+      const rightHandle = container.querySelector('.media__resize__handle__right') as HTMLElement;
+      if (leftHandle) leftHandle.style.opacity = '0';
+      if (rightHandle) rightHandle.style.opacity = '0';
+    }
+    toolbar.style.opacity = '0';
+  }
+
+  private setupResizeHandles(container: HTMLElement) {
+    const leftHandle = container.querySelector('.media__resize__handle__left') as HTMLElement;
+    const rightHandle = container.querySelector('.media__resize__handle__right') as HTMLElement;
+    
+    if (leftHandle) {
+      leftHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this.startResize(e, 'left');
+      });
     }
 
-    this.dom.appendChild(container);
+    if (rightHandle) {
+      rightHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this.startResize(e, 'right');
+      });
+    }
   }
 
   private createDocumentPreview() {
@@ -229,63 +265,12 @@ class MediaNodeView implements NodeView {
   }
 
   private getFileIcon(): string {
-    const extension = this.mediaAlt.split('.').pop()?.toLowerCase();
-    
-    switch (extension) {
-      case 'pdf':
-        return '<i class="fa-regular fa-file-pdf"></i>';
-      case 'doc':
-      case 'docx':
-        return '<i class="fa-regular fa-file-word"></i>';
-      case 'xls':
-      case 'xlsx':
-        return '<i class="fa-regular fa-file-excel"></i>';
-      case 'ppt':
-      case 'pptx':
-        return '<i class="fa-regular fa-file-powerpoint"></i>';
-      case 'zip':
-      case 'rar':
-      case '7z':
-        return '<i class="fa-regular fa-file-archive"></i>';
-      case 'txt':
-        return '<i class="fa-regular fa-file-lines"></i>';
-      case 'csv':
-        return '<i class="fa-regular fa-file-csv"></i>';
-      case 'js':
-      case 'ts':
-      case 'css':
-      case 'html':
-        return '<i class="fa-regular fa-file-code"></i>';
-      default:
-        return '<i class="fa-regular fa-file"></i>';
-    }
+    return getFileIcon(this.mediaAlt);
   }
 
   private formatFileSize(): string {
     const fileSize = this.node.attrs['size'];
-    
-    if (!fileSize || fileSize === 0) {
-      return '0 B';
-    }
-
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = fileSize;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    if (unitIndex === 0) {
-      return `${Math.round(size)} ${units[unitIndex]}`;
-    } else if (size < 10) {
-      return `${size.toFixed(2)} ${units[unitIndex]}`;
-    } else if (size < 100) {
-      return `${size.toFixed(1)} ${units[unitIndex]}`;
-    } else {
-      return `${Math.round(size)} ${units[unitIndex]}`;
-    }
+    return formatFileSize(fileSize);
   }
 
   private createPlaceholderState() {
@@ -298,59 +283,30 @@ class MediaNodeView implements NodeView {
   }
 
   private createToolbarButton(iconClass: string, title: string): HTMLElement {
-    const button = document.createElement('button');
-    button.setAttribute('zapEditorTooltip', title);
-    
-    const icon = document.createElement('i');
-    icon.className = `fa-regular ${iconClass}`;
-    button.appendChild(icon);
-    
-    return button;
+    return createToolbarButton(iconClass, title);
   }
 
   private initializeTooltips(container: HTMLElement) {
-    import('../../services/tooltip.service').then(({ TooltipService }) => {
-      const tooltipService = new TooltipService();
-      
-      const elementsWithTooltips = container.querySelectorAll('[zapEditorTooltip]');
-      
-      elementsWithTooltips.forEach((element) => {
-        const tooltipText = element.getAttribute('zapEditorTooltip');
-        if (tooltipText) {
-          const cleanupFn = tooltipService.createTooltip({
-            text: tooltipText,
-            delay: 500,
-            element: element as HTMLElement
-          });
-          
-          (element as any).__tooltipCleanup = cleanupFn;
-        }
-      });
-    });
+    initializeTooltips(container);
   }
 
   private startResize(e: MouseEvent, direction: 'left' | 'right') {
     const startX = e.clientX;
     const startWidth = this.mediaWidth;
-    const aspectRatio = startWidth / this.mediaHeight;
+    const startHeight = this.mediaHeight;
     
     const editorElement = this.view.dom;
-    const editorRect = editorElement.getBoundingClientRect();
-    const editorWidth = editorRect.width;
-    const maxWidth = Math.min(editorWidth - 32, 800); // Leave 16px margin on each side
-    const minWidth = 100;
+    const constraints = calculateResizeConstraints(editorElement);
 
     const onMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
-      let newWidth = startWidth;
-
-      if (direction === 'right') {
-        newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + deltaX));
-      } else {
-        newWidth = Math.max(minWidth, Math.min(maxWidth, startWidth - deltaX));
-      }
-
-      const newHeight = newWidth / aspectRatio;
+      const { newWidth, newHeight } = calculateNewDimensions(
+        startWidth, 
+        startHeight, 
+        deltaX, 
+        direction, 
+        constraints
+      );
       
       this.mediaWidth = newWidth;
       this.mediaHeight = newHeight;
@@ -387,6 +343,21 @@ class MediaNodeView implements NodeView {
     const content = document.createElement('div');
     content.className = 'media__preview__content';
 
+    const header = this.createModalHeader();
+    const mediaContainer = this.createModalMediaContainer();
+
+    this.setupModalEventListeners(modal, content);
+
+    content.appendChild(header);
+    content.appendChild(mediaContainer);
+    modal.appendChild(content);
+
+    document.body.appendChild(modal);
+    this.initializeTooltips(modal);
+    document.body.style.overflow = 'hidden';
+  }
+
+  private createModalHeader() {
     const header = document.createElement('div');
     header.className = 'media__preview__header';
 
@@ -400,31 +371,9 @@ class MediaNodeView implements NodeView {
     downloadBtn.innerHTML = '<i class="fa-regular fa-download"></i>';
     downloadBtn.setAttribute('zapEditorTooltip', 'Download');
 
-    const mediaContainer = document.createElement('div');
-    mediaContainer.className = 'media__preview__media';
-
-    let mediaElement: HTMLElement;
-    if (this.mediaType === 'image') {
-      mediaElement = document.createElement('img');
-      (mediaElement as HTMLImageElement).src = this.mediaUrl;
-      (mediaElement as HTMLImageElement).alt = this.mediaAlt;
-      mediaElement.className = 'w-full h-full object-contain block cursor-zoom-in';
-      
-      // Add click-to-zoom functionality for images
-      mediaElement.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleImageZoom(mediaElement as HTMLImageElement);
-      });
-    } else {
-      mediaElement = document.createElement('video');
-      (mediaElement as HTMLVideoElement).src = this.mediaUrl;
-      (mediaElement as HTMLVideoElement).controls = true;
-      mediaElement.className = 'w-full h-full object-contain block';
-    }
-
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.closePreviewModal(modal);
+      this.closePreviewModal(closeBtn.closest('.media__preview__modal') as HTMLElement);
     });
 
     downloadBtn.addEventListener('click', (e) => {
@@ -432,6 +381,45 @@ class MediaNodeView implements NodeView {
       this.onDownload();
     });
 
+    header.appendChild(downloadBtn);
+    header.appendChild(closeBtn);
+
+    return header;
+  }
+
+  private createModalMediaContainer() {
+    const mediaContainer = document.createElement('div');
+    mediaContainer.className = 'media__preview__media';
+
+    const mediaElement = this.createModalMediaElement();
+    mediaContainer.appendChild(mediaElement);
+
+    return mediaContainer;
+  }
+
+  private createModalMediaElement(): HTMLElement {
+    if (this.mediaType === 'image') {
+      const img = document.createElement('img');
+      img.src = this.mediaUrl;
+      img.alt = this.mediaAlt;
+      img.className = 'w-full h-full object-contain block cursor-zoom-in';
+      
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleImageZoom(img);
+      });
+
+      return img;
+    } else {
+      const video = document.createElement('video');
+      video.src = this.mediaUrl;
+      video.controls = true;
+      video.className = 'w-full h-full object-contain block';
+      return video;
+    }
+  }
+
+  private setupModalEventListeners(modal: HTMLElement, content: HTMLElement) {
     modal.addEventListener('click', () => {
       this.closePreviewModal(modal);
     });
@@ -439,29 +427,10 @@ class MediaNodeView implements NodeView {
     content.addEventListener('click', (e) => {
       e.stopPropagation();
     });
-
-    header.appendChild(downloadBtn);
-    header.appendChild(closeBtn);
-    mediaContainer.appendChild(mediaElement);
-    content.appendChild(header);
-    content.appendChild(mediaContainer);
-    modal.appendChild(content);
-
-    document.body.appendChild(modal);
-
-    this.initializeTooltips(modal);
-
-    document.body.style.overflow = 'hidden';
   }
 
   private closePreviewModal(modal: HTMLElement) {
-    const elementsWithTooltips = modal.querySelectorAll('[zapEditorTooltip]');
-    elementsWithTooltips.forEach((element) => {
-      if ((element as any).__tooltipCleanup) {
-        (element as any).__tooltipCleanup();
-      }
-    });
-
+    cleanupTooltips(modal);
     modal.remove();
     document.body.style.overflow = '';
   }
@@ -470,13 +439,11 @@ class MediaNodeView implements NodeView {
     const isZoomed = imgElement.classList.contains('zoomed');
     
     if (isZoomed) {
-      // Reset zoom
       imgElement.classList.remove('zoomed');
       imgElement.classList.add('cursor-zoom-in');
       imgElement.style.transform = 'scale(1)';
       imgElement.style.cursor = 'zoom-in';
     } else {
-      // Apply zoom
       imgElement.classList.add('zoomed');
       imgElement.classList.remove('cursor-zoom-in');
       imgElement.style.transform = 'scale(1.5)';
@@ -485,11 +452,7 @@ class MediaNodeView implements NodeView {
   }
 
   private onDownload() {
-    const link = document.createElement('a');
-    link.href = this.mediaUrl;
-    link.download = this.mediaAlt || 'media-download';
-    link.target = '_blank';
-    link.click();
+    downloadFile(this.mediaUrl, this.mediaAlt);
   }
 
   private onDelete() {
@@ -519,12 +482,7 @@ class MediaNodeView implements NodeView {
   }
 
   destroy() {
-    const elementsWithTooltips = this.dom.querySelectorAll('[zapEditorTooltip]');
-    elementsWithTooltips.forEach((element) => {
-      if ((element as any).__tooltipCleanup) {
-        (element as any).__tooltipCleanup();
-      }
-    });
+    cleanupTooltips(this.dom);
 
     if (this.mediaUrl) {
       URL.revokeObjectURL(this.mediaUrl);
